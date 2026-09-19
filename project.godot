@@ -1,0 +1,47 @@
+; Engine configuration file.
+; It's best edited using the editor UI and not directly,
+; since the parameters that go here are not all obvious.
+;
+; Format:
+;   [section] ; section goes between []
+;   param=value ; assign values to parameters
+
+config_version=5
+
+[application]
+
+config/name="idel game"
+run/main_scene="res://ui/main/Main.tscn"
+config/features=PackedStringArray("4.7", "Forward Plus")
+config/icon="res://icon.svg"
+
+[autoload]
+
+game="res://autoload/game.gd"
+*event_bus="res://autoload/event_bus.gd"
+*save_manager="res://autoload/save_manager.gd"
+*content_db="res://autoload/content_db.gd"
+*story_manager="res://autoload/story_manager.gd"
+*meta_director="res://autoload/meta_director.gd"
+*settings_manager="res://autoload/settings_manager.gd"
+*window_manager="res://autoload/window_manager.gd"
+*feature_manager="res://autoload/feature_manager.gd"
+*debug_logger="res://autoload/debug_logger.gd"
+*game="res://autoload/game.gd"
+
+[display]
+
+window/size/viewport_width=1280
+window/size/viewport_height=720
+window/size/window_width_override=1280
+window/size/window_height_override=720
+window/stretch/mode="canvas_items"
+window/stretch/aspect="expand"
+
+[physics]
+
+3d/physics_engine="Jolt Physics"
+
+[rendering]
+
+rendering_device/driver.windows="d3d12"
