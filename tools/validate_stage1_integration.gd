@@ -7,9 +7,9 @@ const AUTOLOAD_REGISTRY := preload("res://autoload/autoload_registry.gd")
 
 const NORMAL_UI_SCENE := preload("res://ui/main/NormalUI.tscn")
 const BITS_PATH := NodePath("RootMargin/WorkspaceVBox/WorkspaceRow/CorePanel/CoreVBox/CoreFrame/CoreButton/CoreReadout/BitsLabel")
-const OWNED_PATH := NodePath("RootMargin/WorkspaceVBox/WorkspaceRow/ProcessesPanel/ProcessesVBox/ProcessScroll/ProcessRows/worker/Margin/VBox/OwnedRow/OwnedValueLabel")
+const OWNED_PATH := NodePath("RootMargin/WorkspaceVBox/WorkspaceRow/ProcessesPanel/ProcessesVBox/ProcessScroll/ProcessRows/worker/Margin/VBox/TopRow/OwnedValueLabel")
 const GENERATE_PATH := NodePath("RootMargin/WorkspaceVBox/WorkspaceRow/CorePanel/CoreVBox/CoreFrame/CoreButton")
-const BUY_PATH := NodePath("RootMargin/WorkspaceVBox/WorkspaceRow/ProcessesPanel/ProcessesVBox/ProcessScroll/ProcessRows/worker/Margin/VBox/AcquireButton")
+const BUY_PATH := NodePath("RootMargin/WorkspaceVBox/WorkspaceRow/ProcessesPanel/ProcessesVBox/ProcessScroll/ProcessRows/worker/Margin/VBox/PurchaseRow/AcquireButton")
 const PROCESS_ROWS_PATH := NodePath("RootMargin/WorkspaceVBox/WorkspaceRow/ProcessesPanel/ProcessesVBox/ProcessScroll/ProcessRows")
 const LOCKED_GENERATOR_IDS := [&"terminal", &"server", &"factory", &"data_center"]
 
@@ -97,8 +97,8 @@ func _run_interaction_checks(errors: PackedStringArray, ui: Control, game: Node,
 		if game.get_worker_count() != 2 or owned_label.text != "2":
 			errors.append("Second Worker purchase did not update Game and Owned label")
 
-	var terminal_button := ui.get_node_or_null(NodePath(str(PROCESS_ROWS_PATH) + "/terminal/Margin/VBox/AcquireButton")) as Button
-	var terminal_owned := ui.get_node_or_null(NodePath(str(PROCESS_ROWS_PATH) + "/terminal/Margin/VBox/OwnedRow/OwnedValueLabel")) as Label
+	var terminal_button := ui.get_node_or_null(NodePath(str(PROCESS_ROWS_PATH) + "/terminal/Margin/VBox/PurchaseRow/AcquireButton")) as Button
+	var terminal_owned := ui.get_node_or_null(NodePath(str(PROCESS_ROWS_PATH) + "/terminal/Margin/VBox/TopRow/OwnedValueLabel")) as Label
 	if terminal_button == null or terminal_owned == null:
 		errors.append("Terminal row controls are missing")
 	else:

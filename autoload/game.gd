@@ -159,6 +159,11 @@ func set_worker_count(count: int) -> void:
 
 
 func get_state() -> Dictionary:
+	return get_save_data()
+
+
+## Returns only persistent gameplay state. Generator ids are data-driven.
+func get_save_data() -> Dictionary:
 	return {
 		"bits": bits,
 		"generator_counts": generator_counts.duplicate(),
@@ -166,19 +171,48 @@ func get_state() -> Dictionary:
 
 
 func set_state(state: Dictionary) -> void:
-	bits = maxf(0.0, float(state.get("bits", 0.0)))
+	apply_save_data(state)
+
+
+## Restores persistent gameplay state while safely ignoring unknown content.
+func apply_save_data(state: Dictionary) -> void:
+	var old_bits := bits
+	bits = _sanitize_non_negative_float(state.get("bits", 0.0))
 	generator_counts.clear()
 	var saved_counts = state.get("generator_counts", {})
 	if saved_counts is Dictionary:
 		for raw_id in saved_counts:
 			var generator_id := StringName(raw_id)
 			if _get_generator_definition(generator_id) != null:
-				generator_counts[generator_id] = max(0, int(saved_counts[raw_id]))
+				generator_counts[generator_id] = _sanitize_non_negative_int(saved_counts[raw_id])
 	# Read the Stage 1 snapshot shape without maintaining parallel state.
 	elif state.has("worker_count"):
 		generator_counts[WORKER_ID] = max(0, int(state.get("worker_count", 0)))
 	_unlocked_generator_ids.clear()
 	_refresh_generator_unlocks()
+	_emit_currency_changed(old_bits, bits)
+
+
+func reset_save_data() -> void:
+	apply_save_data({})
+
+
+func _sanitize_non_negative_float(value: Variant) -> float:
+	if not value is float and not value is int:
+		return 0.0
+	var number := float(value)
+	if is_nan(number) or is_inf(number):
+		return 0.0
+	return maxf(0.0, number)
+
+
+func _sanitize_non_negative_int(value: Variant) -> int:
+	if not value is float and not value is int:
+		return 0
+	var number := float(value)
+	if is_nan(number) or is_inf(number):
+		return 0
+	return max(0, int(number))
 
 
 func _refresh_generator_unlocks() -> Array[StringName]:

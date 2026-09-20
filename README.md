@@ -3,7 +3,7 @@
 An expandable 2D idle game with fourth-wall-breaking/meta mechanics
 inspired by the idea of "There Is No Game", but NOT a horror game.
 
-This is **Stage 2: Data-Driven Generators**.
+This is **Stage 3: Save / Load / Offline Progress**.
 
 ## Godot version
 
@@ -11,12 +11,29 @@ Godot 4.7 (engine features: `4.7`, `Forward Plus`).
 
 ## Current stage
 
-**Stage 2 - Data-Driven Generators.** The project implements Bits, manual
-generation, five generator definitions, generic generator counts and pricing,
-delta-based production, and a dynamic Processes panel built from reusable
-GeneratorRow components. Stage 0 foundation systems remain in place; upgrades,
-achievements, prestige, offline progress, and fourth-wall events are not
-implemented.
+**Stage 3 - Persistence.** The project persists Bits and generic generator
+counts as versioned JSON. It includes validated temp-file writes, a previous
+valid-state backup, automatic startup loading, 12-second autosaves, exit saves,
+and capped offline production. Upgrades, achievements, prestige, story, and
+meta events remain unimplemented.
+
+## Save data
+
+The primary file is `user://save.json`; the one-generation fallback is
+`user://save_backup.json`. Save version 1 is human-readable JSON:
+
+```json
+{"save_version": 1, "saved_at_unix": 1234567890,
+ "game": {"bits": 1234, "generator_counts": {"worker": 4}}}
+```
+
+Counts use stable generator ids, so a newly added generator resource defaults to
+zero without a new save field. Saves first validate `user://save.tmp`; a valid
+old primary is rotated to backup before replacement. Load tries primary, then
+backup, then starts safely fresh. Future format changes use sequential migration
+functions. Offline earnings are `Game`'s current total production per second
+multiplied by elapsed time, capped at 24 hours. `ValidateStage3` uses only
+`user://stage3_validator_*` files and never touches player saves.
 
 ## Project structure
 
@@ -49,8 +66,9 @@ res://
   counts. Does NOT own UI state or generator definitions.
 - **EventBus** (`autoload/event_bus.gd`): typed signal hub. Independent
   systems communicate through it rather than reaching into each other.
-- **SaveManager** (`autoload/save_manager.gd`): save versioning, backup
-  support, and migration hooks. No actual save data yet.
+- **SaveManager** (`autoload/save_manager.gd`): versioned JSON persistence,
+  validated temporary writes, backup recovery, autosave, offline progress, and
+  migration hooks. `reset_save()` is available for development/testing.
 - **ContentDB** (`autoload/content_db.gd`): validates, indexes, and orders
   data-driven generator definitions.
 - **StoryManager** (`autoload/story_manager.gd`): generic story flags
@@ -97,11 +115,6 @@ The main scene is `res://ui/main/Main.tscn`.
 
 ## What should be built next
 
-**STAGE 3 - PERSISTENCE AND PROGRESSION**
-
-The next stage may add:
-
-- Save/load of runtime generator state.
-- Additional progression systems such as upgrades or achievements.
+The next stage may add upgrades or other progression systems.
 
 All of it must follow the architecture rules in `docs/ARCHITECTURE.md`.

@@ -34,6 +34,8 @@ func _connect_signals() -> void:
 		event_bus.currency_changed.connect(_on_currency_changed)
 	if not event_bus.is_connected("generator_bought", _on_generator_bought):
 		event_bus.generator_bought.connect(_on_generator_bought)
+	if not event_bus.is_connected("load_completed", _on_load_completed):
+		event_bus.load_completed.connect(_on_load_completed)
 
 
 func _sync_generator_rows(reveal_new_rows: bool) -> Array:
@@ -174,6 +176,11 @@ func _on_generator_bought(_generator_id: StringName, _new_count: int) -> void:
 		var unlocked_definition: GeneratorDefinition = newly_displayed[0]
 		_unlock_message_pending = true
 		system_log_label.text = "> NEW PROCESS DISCOVERED\n> %s ONLINE\n> Awaiting operator input..." % unlocked_definition.display_name
+	_refresh()
+
+
+func _on_load_completed(_success: bool) -> void:
+	_sync_generator_rows(false)
 	_refresh()
 
 

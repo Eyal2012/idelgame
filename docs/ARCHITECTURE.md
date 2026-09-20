@@ -121,3 +121,27 @@ cards to `Game.gd` or `NormalUI.gd`.
 `NormalUI` creates one reusable `GeneratorRow` for every definition returned
 by `ContentDB`. A row presents state and sends purchase requests to `Game`; it
 does not own progression state or calculate pricing.
+
+## 21. Save format and ownership
+
+`SaveManager` owns versioned JSON persistence in `user://save.json`. Version 1
+contains `save_version`, `saved_at_unix`, and `game`, whose generic
+`generator_counts` dictionary is keyed by stable generator ids. `Game` exposes
+`get_save_data()` and `apply_save_data()`; SaveManager never reaches into its
+internal variables. Missing, unknown, negative, malformed, and non-finite
+values are safely normalized.
+
+## 22. Save safety, recovery, and migration
+
+Saving validates `user://save.tmp` before changing the primary. The previously
+valid primary is retained as `user://save_backup.json`; loading tries primary,
+then backup, then a fresh state without deleting corrupt files. The current
+version is 1. Future schema changes add one explicit sequential migration per
+version transition in `migrate_save()`.
+
+## 23. Autosave and offline production
+
+SaveManager autosaves every 12 seconds and attempts a final save on application
+exit. Startup loading applies offline Bits exactly once per load from Game's
+generic production calculation, capped at 86,400 seconds (24 hours). Validators
+inject `user://stage3_validator_*` paths, keeping real player saves untouched.
