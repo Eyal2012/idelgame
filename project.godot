@@ -23,6 +23,8 @@ game="res://autoload/game.gd"
 *content_db="res://autoload/content_db.gd"
 *story_manager="res://autoload/story_manager.gd"
 *meta_director="res://autoload/meta_director.gd"
+*shift_manager="res://autoload/shift_manager.gd"
+*behavior_observer="res://autoload/behavior_observer.gd"
 *settings_manager="res://autoload/settings_manager.gd"
 *window_manager="res://autoload/window_manager.gd"
 *feature_manager="res://autoload/feature_manager.gd"
@@ -35,6 +37,8 @@ window/size/viewport_width=1280
 window/size/viewport_height=720
 window/size/window_width_override=1280
 window/size/window_height_override=720
+window/size/min_width=900
+window/size/min_height=600
 window/stretch/mode="canvas_items"
 window/stretch/aspect="expand"
 

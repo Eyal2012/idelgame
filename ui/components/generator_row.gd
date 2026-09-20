@@ -1,6 +1,7 @@
 extends PanelContainer
 
 const AUTOLOAD_REGISTRY := preload("res://autoload/autoload_registry.gd")
+const NUMBER_FORMATTER := preload("res://core/number_formatter.gd")
 
 signal generator_acquired(generator_id: StringName)
 
@@ -15,10 +16,14 @@ var _feedback_tween: Tween
 @onready var total_value_label: Label = $Margin/VBox/StatsRow/TotalValueLabel
 @onready var cost_value_label: Label = $Margin/VBox/PurchaseRow/CostValueLabel
 @onready var acquire_button: Button = $Margin/VBox/PurchaseRow/AcquireButton
+@onready var buy_10_button: Button = $Margin/VBox/PurchaseRow/Buy10Button
+@onready var max_button: Button = $Margin/VBox/PurchaseRow/MaxButton
 
 
 func _ready() -> void:
 	acquire_button.pressed.connect(_on_acquire_pressed)
+	buy_10_button.pressed.connect(_on_buy_10_pressed)
+	max_button.pressed.connect(_on_max_pressed)
 	_connect_signals()
 	_apply_style()
 	_refresh()
@@ -55,6 +60,8 @@ func _connect_signals() -> void:
 		event_bus.currency_changed.connect(_on_currency_changed)
 	if not event_bus.is_connected("generator_bought", _on_generator_bought):
 		event_bus.generator_bought.connect(_on_generator_bought)
+	if not event_bus.is_connected("generator_bulk_bought", _on_generator_bulk_bought):
+		event_bus.generator_bulk_bought.connect(_on_generator_bulk_bought)
 
 
 func _refresh() -> void:
@@ -66,17 +73,34 @@ func _refresh() -> void:
 	if game == null:
 		return
 	owned_value_label.text = str(game.get_generator_count(generator_id))
-	each_value_label.text = "EACH +%s/s" % _format_number(_definition.base_production)
-	total_value_label.text = "TOTAL +%s/s" % _format_number(game.get_generator_production(generator_id))
-	cost_value_label.text = "COST %s Bits" % _format_number(game.get_generator_cost(generator_id))
+	each_value_label.text = "NEXT +%s/s" % NUMBER_FORMATTER.format(game.get_next_generator_production(generator_id), 2)
+	total_value_label.text = "TOTAL +%s/s" % NUMBER_FORMATTER.format(game.get_generator_production(generator_id), 2)
+	cost_value_label.text = "1: %s  //  10: %s" % [NUMBER_FORMATTER.format(game.get_generator_bulk_cost(generator_id, 1)), NUMBER_FORMATTER.format(game.get_generator_bulk_cost(generator_id, 10))]
 	acquire_button.disabled = not game.can_buy_generator(generator_id)
+	buy_10_button.disabled = not game.can_afford(game.get_generator_bulk_cost(generator_id, 10))
+	max_button.disabled = game.get_max_affordable_generator_count(generator_id) < 1
 
 
 func _on_acquire_pressed() -> void:
 	var game := AUTOLOAD_REGISTRY.get_autoload(get_tree(), &"game")
-	if game != null and game.buy_generator(generator_id):
+	_buy_amount(1)
+
+
+func _on_buy_10_pressed() -> void:
+	_buy_amount(10)
+
+
+func _on_max_pressed() -> void:
+	var game := AUTOLOAD_REGISTRY.get_autoload(get_tree(), &"game")
+	if game != null:
+		_buy_amount(game.get_max_affordable_generator_count(generator_id))
+
+
+func _buy_amount(amount: int) -> void:
+	var game := AUTOLOAD_REGISTRY.get_autoload(get_tree(), &"game")
+	if game != null and game.buy_generators(generator_id, amount) > 0:
 		_refresh()
-		_play_purchase_feedback()
+		_play_purchase_feedback(amount)
 		generator_acquired.emit(generator_id)
 
 
@@ -89,7 +113,12 @@ func _on_generator_bought(changed_generator_id: StringName, _new_count: int) -> 
 		_refresh()
 
 
-func _play_purchase_feedback() -> void:
+func _on_generator_bulk_bought(changed_generator_id: StringName, _amount: int, _new_count: int) -> void:
+	if changed_generator_id == generator_id:
+		_refresh()
+
+
+func _play_purchase_feedback(amount: int = 1) -> void:
 	if is_instance_valid(_feedback_tween):
 		_feedback_tween.kill()
 	modulate = Color(0.7, 0.95, 1.0, 1.0)
@@ -98,6 +127,9 @@ func _play_purchase_feedback() -> void:
 	_feedback_tween.set_parallel(true)
 	_feedback_tween.tween_property(self, "modulate", Color.WHITE, 0.24)
 	_feedback_tween.tween_property(owned_value_label, "modulate", Color.WHITE, 0.3)
+	if amount > 1:
+		acquire_button.text = "+%d" % amount
+		_feedback_tween.tween_callback(func() -> void: acquire_button.text = "BUY 1").set_delay(0.45)
 
 
 func _apply_style() -> void:
@@ -144,19 +176,8 @@ func _apply_style() -> void:
 	disabled.content_margin_right = 8
 	disabled.content_margin_top = 4
 	disabled.content_margin_bottom = 4
-	acquire_button.add_theme_stylebox_override("normal", normal)
-	acquire_button.add_theme_stylebox_override("hover", hover)
-	acquire_button.add_theme_stylebox_override("disabled", disabled)
-	acquire_button.add_theme_color_override("font_disabled_color", Color("66718d"))
-
-
-func _format_number(value: float) -> String:
-	var source := str(int(round(value)))
-	var result := ""
-	var count := 0
-	for index in range(source.length() - 1, -1, -1):
-		if count > 0 and count % 3 == 0:
-			result = "," + result
-		result = source[index] + result
-		count += 1
-	return result
+	for button in [acquire_button, buy_10_button, max_button]:
+		button.add_theme_stylebox_override("normal", normal)
+		button.add_theme_stylebox_override("hover", hover)
+		button.add_theme_stylebox_override("disabled", disabled)
+		button.add_theme_color_override("font_disabled_color", Color("66718d"))

@@ -8,6 +8,7 @@ extends Resource
 @export var base_cost: float = 0.0
 @export var cost_scaling: float = 1.0
 @export var base_production: float = 0.0
+@export var production_growth: float = 1.04
 @export var sort_order: int = 0
 @export var unlock_after_generator_id: StringName = &""
 @export var unlock_after_generator_count: int = 0
@@ -26,6 +27,8 @@ func validate_definition() -> PackedStringArray:
 		errors.append("Generator %s has negative production" % id)
 	if cost_scaling < 1.0:
 		errors.append("Generator %s has cost scaling below 1" % id)
+	if production_growth < 1.0:
+		errors.append("Generator %s has production growth below 1" % id)
 	if unlock_after_generator_id.is_empty() and unlock_after_generator_count != 0:
 		errors.append("Generator %s has an unlock count without a prerequisite" % id)
 	if not unlock_after_generator_id.is_empty() and unlock_after_generator_count < 1:

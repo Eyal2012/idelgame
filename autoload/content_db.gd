@@ -1,6 +1,7 @@
 extends Node
 
 const GENERATOR_DEFINITION := preload("res://core/generators/generator_definition.gd")
+const UPGRADE_DEFINITION := preload("res://core/upgrades/upgrade_definition.gd")
 
 ## Owns loading and validation of data-driven game content. Game consumes this
 ## registry and never scans resource directories itself.
@@ -15,10 +16,14 @@ const RESOURCE_PATHS: Dictionary = {
 var _generators_by_id: Dictionary = {}
 var _generator_order: Array = []
 var _generator_validation_errors: PackedStringArray = []
+var _upgrades_by_id: Dictionary = {}
+var _upgrade_order: Array = []
+var _upgrade_validation_errors: PackedStringArray = []
 
 
 func _ready() -> void:
 	_load_generators()
+	_load_upgrades()
 
 
 func get_generator(generator_id: StringName) -> GeneratorDefinition:
@@ -35,6 +40,12 @@ func get_generators() -> Array:
 
 func get_generator_validation_errors() -> PackedStringArray:
 	return _generator_validation_errors.duplicate()
+
+func get_upgrade(upgrade_id: StringName) -> UpgradeDefinition: return _upgrades_by_id.get(upgrade_id, null)
+func has_upgrade(upgrade_id: StringName) -> bool: return _upgrades_by_id.has(upgrade_id)
+func get_upgrades() -> Array: return _upgrade_order.duplicate()
+func get_upgrade_validation_errors() -> PackedStringArray: return _upgrade_validation_errors.duplicate()
+func validate_upgrade_definition(definition: UpgradeDefinition) -> PackedStringArray: return PackedStringArray(["Upgrade resource is null"]) if definition == null else definition.validate_definition()
 
 
 func validate_generator_definition(definition: GeneratorDefinition) -> PackedStringArray:
@@ -53,6 +64,7 @@ func validate_generator_unlock_reference(definition: GeneratorDefinition) -> Pac
 func load_resource_type(resource_type: StringName) -> Dictionary:
 	if resource_type == &"generators":
 		return _generators_by_id.duplicate()
+	if resource_type == &"upgrades": return _upgrades_by_id.duplicate()
 	var dir_path: String = RESOURCE_PATHS.get(resource_type, "")
 	if dir_path.is_empty() or DirAccess.open(dir_path) == null:
 		return {}
@@ -101,6 +113,21 @@ func _load_generators() -> void:
 		_generator_order.append(definition)
 	_generator_order.sort_custom(_sort_generators)
 	_validate_generator_unlock_requirements()
+
+func _load_upgrades() -> void:
+	_upgrades_by_id.clear(); _upgrade_order.clear(); _upgrade_validation_errors.clear()
+	var directory := DirAccess.open(RESOURCE_PATHS["upgrades"])
+	if directory == null: return
+	var files := directory.get_files(); files.sort()
+	for file_name in files:
+		if not file_name.ends_with(".tres"): continue
+		var definition := load(RESOURCE_PATHS["upgrades"].path_join(file_name)) as UpgradeDefinition
+		if definition == null: _upgrade_validation_errors.append("Invalid upgrade: " + file_name); continue
+		var errors := validate_upgrade_definition(definition)
+		if not errors.is_empty(): _upgrade_validation_errors.append_array(errors); continue
+		if _upgrades_by_id.has(definition.id): _upgrade_validation_errors.append("Duplicate upgrade id: %s" % definition.id); continue
+		_upgrades_by_id[definition.id] = definition; _upgrade_order.append(definition)
+	_upgrade_order.sort_custom(func(a: UpgradeDefinition, b: UpgradeDefinition) -> bool: return a.id < b.id if a.sort_order == b.sort_order else a.sort_order < b.sort_order)
 
 
 func _sort_generators(first: GeneratorDefinition, second: GeneratorDefinition) -> bool:

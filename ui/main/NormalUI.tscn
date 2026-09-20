@@ -61,6 +61,12 @@ layout_mode = 2
 text = "●  SYSTEM ONLINE"
 vertical_alignment = 1
 
+[node name="ShiftIndicator" type="Label" parent="RootMargin/WorkspaceVBox/HeaderPanel/HeaderRow"]
+layout_mode = 2
+text = "[SHIFT] INSPECT"
+visible = false
+vertical_alignment = 1
+
 [node name="BuildLabel" type="Label" parent="RootMargin/WorkspaceVBox/HeaderPanel/HeaderRow" unique_id=1132238049]
 custom_minimum_size = Vector2(96, 0)
 layout_mode = 2
@@ -97,7 +103,7 @@ text = "›  CORE"
 layout_mode = 2
 text = "   PROCESSES"
 
-[node name="UpgradesNavLabel" type="Label" parent="RootMargin/WorkspaceVBox/WorkspaceRow/SidebarPanel/SidebarVBox" unique_id=1868079414]
+[node name="UpgradesNavLabel" type="Button" parent="RootMargin/WorkspaceVBox/WorkspaceRow/SidebarPanel/SidebarVBox" unique_id=1868079414]
 layout_mode = 2
 text = "   UPGRADES"
 

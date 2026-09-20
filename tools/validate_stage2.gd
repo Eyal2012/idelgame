@@ -38,8 +38,8 @@ func _validate_content(errors: PackedStringArray, content_db: Node) -> void:
 	if worker == null or worker.base_cost != 10.0 or worker.base_production != 1.0 or abs(worker.cost_scaling - 1.15) > 0.0001:
 		errors.append("Worker definition does not match Stage 2 data")
 	var terminal := content_db.get_generator(&"terminal") as GeneratorDefinition
-	if terminal == null or terminal.base_cost != 100.0 or terminal.base_production != 8.0:
-		errors.append("Terminal definition does not match Stage 2 data")
+	if terminal == null or terminal.base_cost != 60.0 or terminal.base_production != 6.0 or abs(terminal.production_growth - 1.04) > 0.0001:
+		errors.append("Terminal definition does not match current balanced data")
 	if terminal == null or terminal.unlock_after_generator_id != &"worker" or terminal.unlock_after_generator_count != 1:
 		errors.append("Terminal unlock data does not match Stage 2.5 progression")
 
@@ -79,24 +79,24 @@ func _validate_gameplay(errors: PackedStringArray, game: Node) -> void:
 	if abs(game.get_generator_cost(&"worker") - 12.0) > 0.0001:
 		errors.append("Second Worker cost should use ceil(10 * 1.15) = 12")
 
-	game.debug_add_currency(100.0)
+	game.debug_add_currency(60.0)
 	if not game.buy_generator(&"terminal"):
 		errors.append("Generic Terminal purchase failed")
 	if not game.is_generator_unlocked(&"server"):
 		errors.append("Terminal purchase did not unlock Server")
 	if game.get_generator_count(&"worker") != 1 or game.get_generator_count(&"terminal") != 1:
 		errors.append("Generator counts are not independent")
-	if abs(game.get_total_production_per_second() - 9.0) > 0.0001:
-		errors.append("Worker plus Terminal production should be 9/sec")
+	if abs(game.get_total_production_per_second() - 7.0) > 0.0001:
+		errors.append("Worker plus Terminal production should be 7/sec")
 	var before: float = game.get_currency()
 	game.update_production(5.0)
-	if abs((game.get_currency() - before) - 45.0) > 0.01:
-		errors.append("Five seconds at 9/sec should produce 45 Bits")
+	if abs((game.get_currency() - before) - 35.0) > 0.01:
+		errors.append("Five seconds at 7/sec should produce 35 Bits")
 
-	game.debug_add_currency(1000.0)
+	game.debug_add_currency(600.0)
 	if not game.buy_generator(&"server") or not game.is_generator_unlocked(&"factory"):
 		errors.append("Server purchase did not unlock Factory")
-	game.debug_add_currency(12000.0)
+	game.debug_add_currency(7200.0)
 	if not game.buy_generator(&"factory") or not game.is_generator_unlocked(&"data_center"):
 		errors.append("Factory purchase did not unlock Data Center")
 

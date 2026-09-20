@@ -8,7 +8,7 @@ const NORMAL_UI_SCENE := preload("res://ui/main/NormalUI.tscn")
 const MAIN_SCENE := preload("res://ui/main/Main.tscn")
 const CONTENT_PATH := NodePath("RootMargin/WorkspaceVBox/WorkspaceRow")
 const PROCESS_VIEWPORT_PATH := NodePath("RootMargin/WorkspaceVBox/WorkspaceRow/ProcessesPanel/ProcessesVBox/ProcessScroll")
-const TEST_SIZES := [Vector2(1280, 720), Vector2(1920, 1080), Vector2(900, 600)]
+const TEST_SIZES := [Vector2(1280, 720), Vector2(1920, 1080), Vector2(2560, 1440), Vector2(900, 600)]
 const EPSILON := 1.0
 
 

@@ -1,0 +1,13 @@
+[gd_resource type="Resource" script_class="UpgradeDefinition" load_steps=2 format=3]
+[ext_resource type="Script" path="res://core/upgrades/upgrade_definition.gd" id="1"]
+[resource]
+script=ExtResource("1")
+id=&"clock_synchronization"
+display_name="CLOCK SYNCHRONIZATION"
+description="Aligns all process clocks."
+cost=500000.0
+sort_order=70
+effect_type=&"global_production_multiplier"
+effect_value=1.5
+unlock_generator_id=&"data_center"
+unlock_generator_count=3

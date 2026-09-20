@@ -76,7 +76,19 @@ theme_override_text_font_size = 11
 text = "COST 0 Bits"
 
 [node name="AcquireButton" type="Button" parent="Margin/VBox/PurchaseRow"]
-custom_minimum_size = Vector2(84, 0)
+custom_minimum_size = Vector2(48, 0)
 layout_mode = 2
 theme_override_font_size = 11
-text = "ACQUIRE"
+text = "BUY 1"
+
+[node name="Buy10Button" type="Button" parent="Margin/VBox/PurchaseRow"]
+custom_minimum_size = Vector2(52, 0)
+layout_mode = 2
+theme_override_font_size = 11
+text = "BUY 10"
+
+[node name="MaxButton" type="Button" parent="Margin/VBox/PurchaseRow"]
+custom_minimum_size = Vector2(42, 0)
+layout_mode = 2
+theme_override_font_size = 11
+text = "MAX"

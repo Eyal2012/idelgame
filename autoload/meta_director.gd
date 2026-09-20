@@ -20,11 +20,84 @@ var _queue: Array = []
 
 ## Whether the director is currently updating an event.
 var _busy: bool = false
+var _first_anomaly_active: bool = false
+var _first_anomaly_elapsed: float = 0.0
+var _first_anomaly_step: int = 0
+
+const FIRST_ANOMALY_EVENT_ID: StringName = &"first_anomaly"
+const ANOMALY_REQUIRED_BITS: float = 50.0
+const ANOMALY_REQUIRED_GENERATOR: StringName = &"terminal"
 
 
 func _ready() -> void:
 	# Connect to game reset so active events get cancelled.
 	_connect_signals()
+
+
+func _process(delta: float) -> void:
+	_check_first_anomaly_condition()
+	_update_first_anomaly(delta)
+	update(delta)
+
+
+## The condition is evaluated outside presentation and starts only once per save.
+func _check_first_anomaly_condition() -> void:
+	if _first_anomaly_active or _is_first_anomaly_complete():
+		return
+	var game := AUTOLOAD_REGISTRY.get_autoload(get_tree(), &"game")
+	if game != null and game.get_generator_count(ANOMALY_REQUIRED_GENERATOR) >= 1 and game.get_currency() >= ANOMALY_REQUIRED_BITS:
+		start_first_anomaly()
+
+
+func start_first_anomaly() -> bool:
+	if _first_anomaly_active or _is_first_anomaly_complete():
+		return false
+	var story := AUTOLOAD_REGISTRY.get_autoload(get_tree(), &"story_manager")
+	if story == null:
+		return false
+	story.set_flag(&"first_anomaly_started", true)
+	_first_anomaly_active = true
+	_first_anomaly_elapsed = 0.0
+	_first_anomaly_step = 0
+	_emit_meta_event_started(FIRST_ANOMALY_EVENT_ID)
+	_emit_log("SCHEDULER CHECK...")
+	return true
+
+
+func is_first_anomaly_active() -> bool:
+	return _first_anomaly_active
+
+
+func _update_first_anomaly(delta: float) -> void:
+	if not _first_anomaly_active:
+		return
+	_first_anomaly_elapsed += delta
+	if _first_anomaly_step == 0 and _first_anomaly_elapsed >= 0.55:
+		_first_anomaly_step = 1
+		_emit_log("EXTERNAL INPUT SOURCE DETECTED")
+	elif _first_anomaly_step == 1 and _first_anomaly_elapsed >= 1.10:
+		_first_anomaly_step = 2
+		_emit_log("PROCESS TABLE MISMATCH")
+	elif _first_anomaly_step == 2 and _first_anomaly_elapsed >= 1.65:
+		_first_anomaly_step = 3
+		_emit_log("1 PROCESS UNACCOUNTED FOR")
+		_emit_anomaly_visual()
+	elif _first_anomaly_step == 3 and _first_anomaly_elapsed >= 2.20:
+		_first_anomaly_step = 4
+		_emit_log("ATTEMPTING PROCESS REALIGNMENT...")
+	elif _first_anomaly_step == 4 and _first_anomaly_elapsed >= 2.70:
+		_first_anomaly_step = 5
+		var story := AUTOLOAD_REGISTRY.get_autoload(get_tree(), &"story_manager")
+		if story != null:
+			story.set_flag(&"shift_state_unlocked", true)
+		_emit_log("SHIFT STATE // AVAILABLE")
+		_first_anomaly_active = false
+		_emit_meta_event_finished(FIRST_ANOMALY_EVENT_ID)
+
+
+func _is_first_anomaly_complete() -> bool:
+	var story := AUTOLOAD_REGISTRY.get_autoload(get_tree(), &"story_manager")
+	return story != null and bool(story.get_flag(&"first_anomaly_started", false))
 
 
 ## Connect to EventBus signals that should interrupt meta events.
@@ -102,6 +175,19 @@ func _load_event(event_id: StringName) -> META_EVENT_BASE:
 func _on_game_reset() -> void:
 	cancel_current()
 	_queue.clear()
+	_first_anomaly_active = false
+
+
+func _emit_log(message: String) -> void:
+	var eb := AUTOLOAD_REGISTRY.get_autoload(get_tree(), &"event_bus")
+	if eb != null:
+		eb.system_log_message.emit(message)
+
+
+func _emit_anomaly_visual() -> void:
+	var eb := AUTOLOAD_REGISTRY.get_autoload(get_tree(), &"event_bus")
+	if eb != null:
+		eb.anomaly_visual_requested.emit()
 
 
 ## Emit meta_event_started via EventBus (decoupled).

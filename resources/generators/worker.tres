@@ -10,5 +10,6 @@ description = "Basic autonomous compute task."
 base_cost = 10.0
 cost_scaling = 1.15
 base_production = 1.0
+production_growth = 1.04
 sort_order = 0
 accent_color = Color(0.505882, 0.407843, 0.843137, 1)

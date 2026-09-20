@@ -53,8 +53,8 @@ func _validate(errors: PackedStringArray, game: Node, saves: Node) -> void:
 		errors.append("J: Worker offline reward was not approximately 5")
 	_write(PRIMARY, _data(0.0, {"worker": 1, "terminal": 1}, _now() - 5))
 	saves.load_game()
-	if abs(saves.last_offline_earnings - 45.0) > 9.1:
-		errors.append("K: mixed offline reward was not approximately 45")
+	if abs(saves.last_offline_earnings - 35.0) > 7.1:
+		errors.append("K: mixed offline reward was not approximately 35")
 	_write(PRIMARY, _data(0.0, {"worker": 1}, _now() - saves.MAX_OFFLINE_SECONDS - 99))
 	saves.load_game()
 	if saves.last_offline_seconds != saves.MAX_OFFLINE_SECONDS:

@@ -3,7 +3,7 @@ extends Node
 const AUTOLOAD_REGISTRY := preload("res://autoload/autoload_registry.gd")
 
 ## Versioned, JSON persistence for runtime gameplay state.
-const SAVE_VERSION: int = 1
+const SAVE_VERSION: int = 3
 const SAVE_PATH: String = "user://save.json"
 const BACKUP_PATH: String = "user://save_backup.json"
 const TEMP_PATH: String = "user://save.tmp"
@@ -47,10 +47,12 @@ func _notification(what: int) -> void:
 
 func build_save_data() -> Dictionary:
 	var game := _get_game()
+	var story := AUTOLOAD_REGISTRY.get_autoload(get_tree(), &"story_manager")
 	return {
 		"save_version": SAVE_VERSION,
 		"saved_at_unix": int(Time.get_unix_time_from_system()),
 		"game": game.get_save_data() if game != null else {"bits": 0.0, "generator_counts": {}},
+		"story": story.get_save_data() if story != null else {"flags": {}},
 	}
 
 
@@ -80,11 +82,15 @@ func load_game() -> bool:
 	if loaded.is_empty():
 		push_warning("No usable save found; starting a fresh game.")
 		game.reset_save_data()
+		_reset_story_state()
 		_has_loaded_session = true
 		_emit_load_completed(false)
 		return false
 	var normalized := migrate_save(loaded)
 	game.apply_save_data(normalized.get("game", {}))
+	var story := AUTOLOAD_REGISTRY.get_autoload(get_tree(), &"story_manager")
+	if story != null:
+		story.apply_save_data(normalized.get("story", {}))
 	_apply_offline_progress(game, int(normalized.get("saved_at_unix", 0)))
 	_has_loaded_session = true
 	_emit_load_completed(true)
@@ -99,6 +105,10 @@ func migrate_save(data: Dictionary) -> Dictionary:
 		match version:
 			0:
 				migrated = _migrate_v0_to_v1(migrated)
+			1:
+				migrated = _migrate_v1_to_v2(migrated)
+			2:
+				migrated = _migrate_v2_to_v3(migrated)
 			_:
 				break
 		version = _sanitize_version(migrated.get("save_version", SAVE_VERSION))
@@ -108,6 +118,8 @@ func migrate_save(data: Dictionary) -> Dictionary:
 	migrated["saved_at_unix"] = max(0, int(migrated.get("saved_at_unix", 0)))
 	if not migrated.get("game", {}) is Dictionary:
 		migrated["game"] = {}
+	if not migrated.get("story", {}) is Dictionary:
+		migrated["story"] = {"flags": {}}
 	return migrated
 
 
@@ -116,6 +128,25 @@ func _migrate_v0_to_v1(data: Dictionary) -> Dictionary:
 	result["game"] = result.get("game", result.get("state", {}))
 	result["saved_at_unix"] = result.get("saved_at_unix", result.get("timestamp", 0))
 	result["save_version"] = 1
+	return result
+
+
+func _migrate_v1_to_v2(data: Dictionary) -> Dictionary:
+	var result := data.duplicate(true)
+	result["story"] = {"flags": {
+		"first_anomaly_started": false,
+		"shift_state_unlocked": false,
+		"operator_discovered": false,
+	}}
+	result["save_version"] = 2
+	return result
+
+func _migrate_v2_to_v3(data: Dictionary) -> Dictionary:
+	var result := data.duplicate(true)
+	var game_data: Dictionary = result.get("game", {})
+	game_data["owned_upgrades"] = []
+	result["game"] = game_data
+	result["save_version"] = 3
 	return result
 
 
@@ -143,6 +174,13 @@ func reset_save(include_backup: bool = true) -> void:
 	var game := _get_game()
 	if game != null:
 		game.reset_save_data()
+	_reset_story_state()
+
+
+func _reset_story_state() -> void:
+	var story := AUTOLOAD_REGISTRY.get_autoload(get_tree(), &"story_manager")
+	if story != null:
+		story.clear()
 
 
 func _apply_offline_progress(game: Node, saved_at: int) -> void:

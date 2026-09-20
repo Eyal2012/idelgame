@@ -15,10 +15,18 @@ var current_chapter: StringName = StringName()
 ## All known story flags. Values are Variant (bool, int, float, string).
 var _flags: Dictionary = {}
 
+const FIRST_ANOMALY_STARTED: StringName = &"first_anomaly_started"
+const SHIFT_STATE_UNLOCKED: StringName = &"shift_state_unlocked"
+const OPERATOR_DISCOVERED: StringName = &"operator_discovered"
+const DEFAULT_FLAGS: Dictionary = {
+	FIRST_ANOMALY_STARTED: false,
+	SHIFT_STATE_UNLOCKED: false,
+	OPERATOR_DISCOVERED: false,
+}
+
 
 func _ready() -> void:
-	# Initialize with defaults if needed.
-	pass
+	_reset_defaults()
 
 
 ## Set a story flag, emitting story_flag_changed if the value changes.
@@ -54,13 +62,34 @@ func get_flags() -> Dictionary:
 
 ## Restore flags from a saved snapshot.
 func set_flags(flags: Dictionary) -> void:
-	_flags = flags.duplicate()
+	_flags.clear()
+	_reset_defaults()
+	for raw_id in flags:
+		var flag_id := StringName(raw_id)
+		if DEFAULT_FLAGS.has(flag_id):
+			_flags[flag_id] = bool(flags[raw_id])
+
+
+func get_save_data() -> Dictionary:
+	return {"flags": get_flags(), "current_chapter": String(current_chapter)}
+
+
+func apply_save_data(data: Dictionary) -> void:
+	set_flags(data.get("flags", {}) if data.get("flags", {}) is Dictionary else {})
+	current_chapter = StringName(data.get("current_chapter", ""))
 
 
 ## Clear all story state (used on game reset).
 func clear() -> void:
 	_flags.clear()
+	_reset_defaults()
 	current_chapter = StringName()
+
+
+func _reset_defaults() -> void:
+	for flag_id in DEFAULT_FLAGS:
+		if not _flags.has(flag_id):
+			_flags[flag_id] = DEFAULT_FLAGS[flag_id]
 
 
 ## Emit story_flag_changed through EventBus (decoupled).

@@ -145,3 +145,58 @@ SaveManager autosaves every 12 seconds and attempts a final save on application
 exit. Startup loading applies offline Bits exactly once per load from Game's
 generic production calculation, capped at 86,400 seconds (24 hours). Validators
 inject `user://stage3_validator_*` paths, keeping real player saves untouched.
+
+## 24. SHIFT layer architecture
+
+`ShiftManager` observes only Godot's physical Shift-key state and maintains a
+reusable registration of a normal `Control`, its hidden SHIFT-layer `Control`,
+and a base offset. It records the original position once, applies a small offset
+while active, and restores that exact position on release; no puzzle state lives
+in UI nodes. `MetaOverlay` hosts hidden material, while `StoryManager` owns
+whether SHIFT is available and whether it has been discovered.
+
+## 25. First anomaly and safe observation
+
+`MetaDirector` evaluates the one-time Terminal-plus-Bits progression condition
+outside UI and sequences dry diagnostic System Log messages through EventBus.
+Temporary UI effects are requested through EventBus and must tween back to their
+captured base values. `BehaviorObserver` observes only ordinary in-game Godot
+mouse/window/focus/viewport events. It does not inspect files, record input
+outside the game, or manipulate the operating system.
+
+## 26. Story persistence and v1 -> v2 migration
+
+Save version 2 adds a `story` block. The explicit v1 -> v2 migration preserves
+all game currency and generator counts and adds false defaults for
+`first_anomaly_started`, `shift_state_unlocked`, and `operator_discovered`.
+All meta effects remain within the game window. Future progression may build
+toward the signed 32-bit maximum `2,147,483,647`; that overflow event is not
+implemented in Stage 4.
+
+## 27. Process economy and bulk purchasing
+
+`GeneratorDefinition` owns base cost, cost growth, base production, and
+production growth. `Game` is the sole owner of next-cost, exact bulk-cost,
+affordability, and geometric total-production math. UI must call
+`get_generator_bulk_cost`, `get_max_affordable_generator_count`, and
+`buy_generators`; it must not duplicate economic formulas. BUY 10 is always the
+sum of ten rounded sequential prices. MAX uses bracketing/binary search and
+exact sums, never a guessed multiplier or unbounded purchase loop.
+
+## 28. Economy presentation and future modifiers
+
+`NumberFormatter` is the shared number presentation utility. Generator rows
+show ownership, next marginal output, total output, and exact BUY 1/BUY 10
+costs. `Game.get_generator_production_multiplier()` is a deliberate neutral
+extension point for future upgrades; Stage 4.5 adds no hidden multipliers or
+upgrade gameplay. Balance simulation lives under `tools/` and never affects
+saves or runtime gameplay.
+
+## 29. Upgrade modules
+
+`UpgradeDefinition` resources own stable ids, costs, effects, unlock rules, and
+prerequisites. `ContentDB` indexes them deterministically. `Game` alone owns
+generic upgrade ownership and applies modifiers in this order: base geometric
+generator production, target-generator multipliers, then global multipliers.
+UI presents definitions only. Save v3 adds generic `owned_upgrades`; migration
+v2 -> v3 defaults it to an empty array while retaining all existing state.

@@ -15,6 +15,9 @@ signal currency_changed(currency_id: StringName, old_amount: float, new_amount: 
 ## Args: generator_id (StringName), new_count (int)
 signal generator_bought(generator_id: StringName, new_count: int)
 
+## Emitted once for a completed bulk purchase.
+signal generator_bulk_bought(generator_id: StringName, amount: int, new_count: int)
+
 ## Emitted when an upgrade is purchased.
 ## Args: upgrade_id (StringName)
 signal upgrade_bought(upgrade_id: StringName)
@@ -88,6 +91,14 @@ signal load_started()
 ## Emitted when load completes successfully.
 ## Args: success (bool)
 signal load_completed(success: bool)
+
+## Diagnostic text for the single System Log presentation surface.
+signal system_log_message(message: String)
+
+## Stage 4 meta/SHIFT presentation events. Gameplay state remains in managers.
+signal anomaly_visual_requested()
+signal shift_state_changed(active: bool)
+signal operator_discovered()
 
 ## Emitted when the game is reset.
 signal game_reset()

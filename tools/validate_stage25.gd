@@ -78,5 +78,7 @@ func _validate_compact_layout(errors: PackedStringArray, ui: Control) -> void:
 	for row in rows.get_children():
 		if row is Control and row.custom_minimum_size.y > 110.0:
 			errors.append("Generator row is not compact: %s" % row.name)
-	if rows.size.y - scroll.size.y > 120.0:
-		errors.append("All unlocked rows require excessive scrolling at 1280x720")
+	# Stage 4.6 reserves the top of this same right panel for the compact module
+	# bay; the remaining Process list must still expose several rows, not all five.
+	if rows.size.y - scroll.size.y > 450.0:
+		errors.append("Process scrolling is excessive beside the module bay at 1280x720")

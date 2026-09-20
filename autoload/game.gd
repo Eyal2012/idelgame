@@ -10,6 +10,7 @@ const WORKER_ID: StringName = &"worker" # Transitional Stage 1 compatibility id.
 
 var bits: float = 0.0
 var generator_counts: Dictionary = {}
+var owned_upgrades: Dictionary = {}
 var _unlocked_generator_ids: Dictionary = {}
 
 
@@ -53,7 +54,30 @@ func can_afford(amount: float) -> bool:
 
 
 func generate_manual() -> void:
-	add_currency(MANUAL_CLICK_POWER)
+	add_currency(get_manual_generation_amount())
+
+func get_manual_generation_amount() -> float:
+	var total := MANUAL_CLICK_POWER
+	for upgrade in _get_owned_upgrade_definitions():
+		if upgrade.effect_type == &"manual_add": total += upgrade.effect_value
+	return total
+
+func is_upgrade_owned(upgrade_id: StringName) -> bool: return owned_upgrades.has(upgrade_id)
+func is_upgrade_unlocked(upgrade_id: StringName) -> bool:
+	var upgrade := _get_upgrade_definition(upgrade_id)
+	if upgrade == null or is_upgrade_owned(upgrade_id): return false
+	if not upgrade.unlock_generator_id.is_empty() and get_generator_count(upgrade.unlock_generator_id) < upgrade.unlock_generator_count: return false
+	return upgrade.prerequisite_upgrade_id.is_empty() or is_upgrade_owned(upgrade.prerequisite_upgrade_id)
+func can_buy_upgrade(upgrade_id: StringName) -> bool:
+	var upgrade := _get_upgrade_definition(upgrade_id)
+	return upgrade != null and is_upgrade_unlocked(upgrade_id) and can_afford(upgrade.cost)
+func buy_upgrade(upgrade_id: StringName) -> bool:
+	var upgrade := _get_upgrade_definition(upgrade_id)
+	if upgrade == null or not can_buy_upgrade(upgrade_id) or not spend_currency(upgrade.cost): return false
+	owned_upgrades[upgrade_id] = true
+	var event_bus := AUTOLOAD_REGISTRY.get_autoload(get_tree(), &"event_bus")
+	if event_bus != null: event_bus.upgrade_bought.emit(upgrade_id)
+	return true
 
 
 func get_generator_count(generator_id: StringName) -> int:
@@ -94,25 +118,98 @@ func can_buy_generator(generator_id: StringName) -> bool:
 
 
 func buy_generator(generator_id: StringName) -> bool:
-	if not can_buy_generator(generator_id):
-		return false
-	var cost := get_generator_cost(generator_id)
+	return buy_generators(generator_id, 1) == 1
+
+
+## Exact sum of sequential, rounded next costs. The UI delegates all bulk math
+## here, so BUY 10 always matches ten individual purchases.
+func get_generator_bulk_cost(generator_id: StringName, amount: int) -> float:
+	var definition := _get_generator_definition(generator_id)
+	if definition == null or amount < 1:
+		return -1.0
+	var total := 0.0
+	var owned := get_generator_count(generator_id)
+	for index in range(amount):
+		var cost: float = ceil(definition.base_cost * pow(definition.cost_scaling, owned + index))
+		if is_inf(cost) or total > 1.0e300 - cost:
+			return INF
+		total += cost
+	return total
+
+
+func get_max_affordable_generator_count(generator_id: StringName) -> int:
+	if not is_generator_unlocked(generator_id) or get_generator_cost(generator_id) > bits:
+		return 0
+	# Costs reach floating-point infinity in a few thousand steps at 1.15, so
+	# logarithmic bracketing plus exact bounded sums stays fast even for huge Bits.
+	var low := 0
+	var high := 1
+	while get_generator_bulk_cost(generator_id, high) <= bits:
+		low = high
+		high *= 2
+		if high > 8192:
+			break
+	while low + 1 < high:
+		var middle: int = low + int((high - low) / 2)
+		if get_generator_bulk_cost(generator_id, middle) <= bits:
+			low = middle
+		else:
+			high = middle
+	return low
+
+
+## Returns the actual purchased amount (zero for safe failure).
+func buy_generators(generator_id: StringName, amount: int) -> int:
+	if amount < 1 or not is_generator_unlocked(generator_id):
+		return 0
+	var cost := get_generator_bulk_cost(generator_id, amount)
+	if cost < 0.0 or is_inf(cost) or not can_afford(cost):
+		return 0
 	var previous_count := get_generator_count(generator_id)
-	# Increment first so currency_changed observers see the completed purchase.
-	generator_counts[generator_id] = previous_count + 1
+	generator_counts[generator_id] = previous_count + amount
 	if not spend_currency(cost):
 		generator_counts[generator_id] = previous_count
-		return false
+		return 0
 	_refresh_generator_unlocks()
-	_emit_generator_bought(generator_id, previous_count + 1)
-	return true
+	_emit_generator_bought(generator_id, previous_count + amount)
+	_emit_generator_bulk_bought(generator_id, amount, previous_count + amount)
+	return amount
 
 
 func get_generator_production(generator_id: StringName) -> float:
 	var definition := _get_generator_definition(generator_id)
 	if definition == null:
 		return 0.0
-	return get_generator_count(generator_id) * definition.base_production
+	var count := get_generator_count(generator_id)
+	if count <= 0:
+		return 0.0
+	var growth := definition.production_growth
+	if is_equal_approx(growth, 1.0):
+		return definition.base_production * count * get_generator_production_multiplier(generator_id)
+	var geometric_sum := (pow(growth, count) - 1.0) / (growth - 1.0)
+	return definition.base_production * geometric_sum * get_generator_production_multiplier(generator_id)
+
+
+func get_next_generator_production(generator_id: StringName) -> float:
+	var definition := _get_generator_definition(generator_id)
+	if definition == null:
+		return 0.0
+	return definition.base_production * pow(definition.production_growth, get_generator_count(generator_id)) * get_generator_production_multiplier(generator_id)
+
+
+## Intentional extension point for future one-time upgrades/modifiers.
+func get_generator_production_multiplier(_generator_id: StringName) -> float:
+	var multiplier := get_global_production_multiplier()
+	for upgrade in _get_owned_upgrade_definitions():
+		if upgrade.effect_type == &"generator_multiplier" and upgrade.target_id == _generator_id:
+			multiplier *= upgrade.effect_value
+	return multiplier
+
+func get_global_production_multiplier() -> float:
+	var multiplier := 1.0
+	for upgrade in _get_owned_upgrade_definitions():
+		if upgrade.effect_type == &"global_production_multiplier": multiplier *= upgrade.effect_value
+	return multiplier
 
 
 func get_total_production_per_second() -> float:
@@ -167,6 +264,7 @@ func get_save_data() -> Dictionary:
 	return {
 		"bits": bits,
 		"generator_counts": generator_counts.duplicate(),
+		"owned_upgrades": owned_upgrades.keys(),
 	}
 
 
@@ -179,6 +277,7 @@ func apply_save_data(state: Dictionary) -> void:
 	var old_bits := bits
 	bits = _sanitize_non_negative_float(state.get("bits", 0.0))
 	generator_counts.clear()
+	owned_upgrades.clear()
 	var saved_counts = state.get("generator_counts", {})
 	if saved_counts is Dictionary:
 		for raw_id in saved_counts:
@@ -188,6 +287,11 @@ func apply_save_data(state: Dictionary) -> void:
 	# Read the Stage 1 snapshot shape without maintaining parallel state.
 	elif state.has("worker_count"):
 		generator_counts[WORKER_ID] = max(0, int(state.get("worker_count", 0)))
+	var saved_upgrades = state.get("owned_upgrades", [])
+	if saved_upgrades is Array:
+		for raw_id in saved_upgrades:
+			var upgrade_id := StringName(raw_id)
+			if _get_upgrade_definition(upgrade_id) != null: owned_upgrades[upgrade_id] = true
 	_unlocked_generator_ids.clear()
 	_refresh_generator_unlocks()
 	_emit_currency_changed(old_bits, bits)
@@ -243,6 +347,17 @@ func _get_generator_definition(generator_id: StringName) -> GeneratorDefinition:
 		return null
 	return content_db.get_generator(generator_id) as GeneratorDefinition
 
+func _get_upgrade_definition(upgrade_id: StringName) -> UpgradeDefinition:
+	var content_db := _get_content_db()
+	return content_db.get_upgrade(upgrade_id) as UpgradeDefinition if content_db != null else null
+
+func _get_owned_upgrade_definitions() -> Array:
+	var definitions: Array = []
+	for raw_id in owned_upgrades:
+		var definition := _get_upgrade_definition(StringName(raw_id))
+		if definition != null: definitions.append(definition)
+	return definitions
+
 
 func _get_content_db() -> Node:
 	return AUTOLOAD_REGISTRY.get_autoload(get_tree(), &"content_db")
@@ -258,3 +373,9 @@ func _emit_generator_bought(generator_id: StringName, new_count: int) -> void:
 	var event_bus := AUTOLOAD_REGISTRY.get_autoload(get_tree(), &"event_bus")
 	if event_bus != null:
 		event_bus.generator_bought.emit(generator_id, new_count)
+
+
+func _emit_generator_bulk_bought(generator_id: StringName, amount: int, new_count: int) -> void:
+	var event_bus := AUTOLOAD_REGISTRY.get_autoload(get_tree(), &"event_bus")
+	if event_bus != null:
+		event_bus.generator_bulk_bought.emit(generator_id, amount, new_count)

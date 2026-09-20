@@ -1,0 +1,14 @@
+[gd_resource type="Resource" script_class="UpgradeDefinition" load_steps=2 format=3]
+[ext_resource type="Script" path="res://core/upgrades/upgrade_definition.gd" id="1"]
+[resource]
+script=ExtResource("1")
+id=&"worker_threading"
+display_name="WORKER THREADING"
+description="Worker processes execute in parallel."
+cost=150.0
+sort_order=10
+effect_type=&"generator_multiplier"
+target_id=&"worker"
+effect_value=2.0
+unlock_generator_id=&"worker"
+unlock_generator_count=5

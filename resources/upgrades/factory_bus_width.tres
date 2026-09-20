@@ -1,0 +1,14 @@
+[gd_resource type="Resource" script_class="UpgradeDefinition" load_steps=2 format=3]
+[ext_resource type="Script" path="res://core/upgrades/upgrade_definition.gd" id="1"]
+[resource]
+script=ExtResource("1")
+id=&"factory_bus_width"
+display_name="FACTORY BUS WIDTH"
+description="Widens factory dispatch lanes."
+cost=35000.0
+sort_order=50
+effect_type=&"generator_multiplier"
+target_id=&"factory"
+effect_value=2.0
+unlock_generator_id=&"factory"
+unlock_generator_count=3

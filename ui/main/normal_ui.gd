@@ -2,13 +2,18 @@ extends Control
 
 const AUTOLOAD_REGISTRY := preload("res://autoload/autoload_registry.gd")
 const GENERATOR_ROW_SCENE := preload("res://ui/components/GeneratorRow.tscn")
+const NUMBER_FORMATTER := preload("res://core/number_formatter.gd")
+const UPGRADE_STORE := preload("res://ui/components/upgrade_store.gd")
 
 var bits_label: Label
 var per_second_label: Label
 var core_button: Button
 var system_log_label: Label
 var process_rows: VBoxContainer
+var shift_indicator: Label
+var upgrade_store: PanelContainer
 var _core_feedback_tween: Tween
+var _anomaly_tween: Tween
 var _displayed_generator_ids: Dictionary = {}
 var _unlock_message_pending: bool = false
 
@@ -19,11 +24,21 @@ func _ready() -> void:
 	core_button = get_node("RootMargin/WorkspaceVBox/WorkspaceRow/CorePanel/CoreVBox/CoreFrame/CoreButton")
 	system_log_label = get_node("RootMargin/WorkspaceVBox/LogPanel/LogVBox/SystemLogLabel")
 	process_rows = get_node("RootMargin/WorkspaceVBox/WorkspaceRow/ProcessesPanel/ProcessesVBox/ProcessScroll/ProcessRows")
+	shift_indicator = get_node("RootMargin/WorkspaceVBox/HeaderPanel/HeaderRow/ShiftIndicator")
 	core_button.pressed.connect(_on_generate_pressed)
+	var upgrades_button := get_node("RootMargin/WorkspaceVBox/WorkspaceRow/SidebarPanel/SidebarVBox/UpgradesNavLabel") as Button
+	upgrades_button.pressed.connect(_toggle_upgrades)
+	upgrade_store = UPGRADE_STORE.new()
+	var processes_vbox := process_rows.get_parent().get_parent() as VBoxContainer
+	processes_vbox.add_child(upgrade_store)
+	processes_vbox.move_child(upgrade_store, 0)
 	_connect_signals()
+	_configure_shift_layer()
 	_apply_theme()
 	_sync_generator_rows(false)
 	_refresh()
+	get_viewport().size_changed.connect(_apply_responsive_layout)
+	call_deferred("_apply_responsive_layout")
 
 
 func _connect_signals() -> void:
@@ -36,6 +51,27 @@ func _connect_signals() -> void:
 		event_bus.generator_bought.connect(_on_generator_bought)
 	if not event_bus.is_connected("load_completed", _on_load_completed):
 		event_bus.load_completed.connect(_on_load_completed)
+	if not event_bus.is_connected("system_log_message", _on_system_log_message):
+		event_bus.system_log_message.connect(_on_system_log_message)
+	if not event_bus.is_connected("anomaly_visual_requested", _on_anomaly_visual_requested):
+		event_bus.anomaly_visual_requested.connect(_on_anomaly_visual_requested)
+	if not event_bus.is_connected("shift_state_changed", _on_shift_state_changed):
+		event_bus.shift_state_changed.connect(_on_shift_state_changed)
+	if not event_bus.is_connected("story_flag_changed", _on_story_flag_changed):
+		event_bus.story_flag_changed.connect(_on_story_flag_changed)
+
+
+func _configure_shift_layer() -> void:
+	var shift := AUTOLOAD_REGISTRY.get_autoload(get_tree(), &"shift_manager")
+	var overlay := get_node_or_null("../MetaOverlay")
+	var core_panel := get_node("RootMargin/WorkspaceVBox/WorkspaceRow/CorePanel") as Control
+	if overlay != null and overlay.has_method("configure"):
+		overlay.configure(core_panel)
+		if overlay.has_signal("operator_selected"):
+			overlay.operator_selected.connect(_on_operator_selected)
+	if shift != null and overlay is Control:
+		shift.register_shift_pair(get_node("RootMargin") as Control, overlay as Control)
+	_refresh_shift_indicator()
 
 
 func _sync_generator_rows(reveal_new_rows: bool) -> Array:
@@ -119,23 +155,40 @@ func _style_core_button() -> void:
 
 
 func _set_label_color(path: NodePath, color: Color) -> void:
-	var label := get_node(path) as Label
+	var label := get_node(path) as Control
 	label.add_theme_color_override("font_color", color)
+
+func _toggle_upgrades() -> void:
+	if upgrade_store.has_method("_refresh"): upgrade_store._refresh()
+
+func _apply_responsive_layout() -> void:
+	var viewport_size:=get_viewport_rect().size
+	var width:=viewport_size.x
+	var left:=150.0 if width<1500.0 else 180.0 if width<2200.0 else 205.0
+	var right:=380.0 if width<1500.0 else 465.0 if width<2200.0 else 540.0
+	var core_size:=250.0 if width<1500.0 else 330.0 if width<2200.0 else 400.0
+	var sidebar:=get_node("RootMargin/WorkspaceVBox/WorkspaceRow/SidebarPanel") as Control
+	var processes:=get_node("RootMargin/WorkspaceVBox/WorkspaceRow/ProcessesPanel") as Control
+	var log_panel:=get_node("RootMargin/WorkspaceVBox/LogPanel") as Control
+	sidebar.custom_minimum_size.x=left;processes.custom_minimum_size.x=right
+	core_button.custom_minimum_size=Vector2(core_size,core_size)
+	log_panel.custom_minimum_size.y=96.0 if viewport_size.y<900.0 else 124.0 if viewport_size.y<1200.0 else 148.0
+	upgrade_store.set_responsive_layout(int(width),int(viewport_size.y))
 
 
 func _refresh() -> void:
 	var game := AUTOLOAD_REGISTRY.get_autoload(get_tree(), &"game")
 	if game == null:
 		return
-	bits_label.text = "%s BITS" % _format_number(game.get_currency())
-	per_second_label.text = "+%s BITS / SEC" % _format_number(game.get_total_production_per_second())
+	bits_label.text = "%s BITS" % NUMBER_FORMATTER.format(game.get_currency())
+	per_second_label.text = "+%s BITS / SEC" % NUMBER_FORMATTER.format(game.get_total_production_per_second(), 2)
 
 
 func _on_generate_pressed() -> void:
 	var game := AUTOLOAD_REGISTRY.get_autoload(get_tree(), &"game")
 	if game != null:
 		game.generate_manual()
-		system_log_label.text = "> Manual computation accepted\n> Bit stream incremented\n> Awaiting operator input..."
+		system_log_label.text = "> Manual computation accepted\n> Bit stream incremented\n> Awaiting input..."
 		_play_core_feedback()
 
 
@@ -182,15 +235,52 @@ func _on_generator_bought(_generator_id: StringName, _new_count: int) -> void:
 func _on_load_completed(_success: bool) -> void:
 	_sync_generator_rows(false)
 	_refresh()
+	_refresh_shift_indicator()
 
 
-func _format_number(value: float) -> String:
-	var source := str(int(round(value)))
-	var result := ""
-	var count := 0
-	for index in range(source.length() - 1, -1, -1):
-		if count > 0 and count % 3 == 0:
-			result = "," + result
-		result = source[index] + result
-		count += 1
-	return result
+func _on_system_log_message(message: String) -> void:
+	system_log_label.text = "> " + message.replace("\n", "\n> ")
+
+
+func _on_anomaly_visual_requested() -> void:
+	if is_instance_valid(_anomaly_tween):
+		_anomaly_tween.kill()
+	var base_position := core_button.position
+	core_button.position = base_position + Vector2(3.0, -2.0)
+	core_button.modulate = Color(0.72, 0.95, 1.0, 1.0)
+	_anomaly_tween = create_tween()
+	_anomaly_tween.set_parallel(true)
+	_anomaly_tween.tween_property(core_button, "position", base_position, 0.22).set_trans(Tween.TRANS_SINE)
+	_anomaly_tween.tween_property(core_button, "modulate", Color.WHITE, 0.32)
+
+
+func _on_shift_state_changed(_active: bool) -> void:
+	_refresh_shift_indicator()
+
+
+func _on_story_flag_changed(_flag_id: StringName, _old_value: Variant, _new_value: Variant) -> void:
+	_refresh_shift_indicator()
+
+
+func _refresh_shift_indicator() -> void:
+	var story := AUTOLOAD_REGISTRY.get_autoload(get_tree(), &"story_manager")
+	if story == null:
+		return
+	var available := bool(story.get_flag(&"shift_state_unlocked", false))
+	shift_indicator.visible = available
+	shift_indicator.text = "[SHIFT] INSPECT" if available else ""
+
+
+func _on_operator_selected() -> void:
+	var story := AUTOLOAD_REGISTRY.get_autoload(get_tree(), &"story_manager")
+	var shift := AUTOLOAD_REGISTRY.get_autoload(get_tree(), &"shift_manager")
+	if story == null or shift == null or not shift.is_shift_active() or bool(story.get_flag(&"operator_discovered", false)):
+		return
+	story.set_flag(&"operator_discovered", true)
+	var overlay := get_node_or_null("../MetaOverlay")
+	if overlay != null and overlay.has_method("set_operator_discovered"):
+		overlay.set_operator_discovered()
+	_on_system_log_message("UNREGISTERED PROCESS SELECTED\nSCANNING...\nTYPE: INPUT SOURCE\nORIGIN: OUTSIDE SIMULATION\nASSIGNING TEMPORARY IDENTIFIER...\nOPERATOR")
+	var event_bus := AUTOLOAD_REGISTRY.get_autoload(get_tree(), &"event_bus")
+	if event_bus != null:
+		event_bus.operator_discovered.emit()

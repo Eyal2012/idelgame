@@ -1,0 +1,11 @@
+[gd_resource type="Resource" script_class="UpgradeDefinition" load_steps=2 format=3]
+[ext_resource type="Script" path="res://core/upgrades/upgrade_definition.gd" id="1"]
+[resource]
+script=ExtResource("1")
+id=&"input_cache"
+display_name="INPUT CACHE"
+description="Caches one additional unit of manual input."
+cost=50.0
+sort_order=0
+effect_type=&"manual_add"
+effect_value=1.0
