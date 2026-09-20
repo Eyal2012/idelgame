@@ -1,0 +1,16 @@
+[gd_resource type="Resource" script_class="GeneratorDefinition" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://core/generators/generator_definition.gd" id="1_definition"]
+
+[resource]
+script = ExtResource("1_definition")
+id = &"data_center"
+display_name = "DATA CENTER"
+description = "Massive distributed computation infrastructure."
+base_cost = 150000.0
+cost_scaling = 1.15
+base_production = 2000.0
+sort_order = 40
+unlock_after_generator_id = &"factory"
+unlock_after_generator_count = 1
+accent_color = Color(0.282353, 0.74902, 0.807843, 1)

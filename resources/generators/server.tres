@@ -1,0 +1,16 @@
+[gd_resource type="Resource" script_class="GeneratorDefinition" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://core/generators/generator_definition.gd" id="1_definition"]
+
+[resource]
+script = ExtResource("1_definition")
+id = &"server"
+display_name = "SERVER RACK"
+description = "Persistent high-throughput computation."
+base_cost = 1000.0
+cost_scaling = 1.15
+base_production = 50.0
+sort_order = 20
+unlock_after_generator_id = &"terminal"
+unlock_after_generator_count = 1
+accent_color = Color(0.447059, 0.596078, 0.960784, 1)

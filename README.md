@@ -3,7 +3,7 @@
 An expandable 2D idle game with fourth-wall-breaking/meta mechanics
 inspired by the idea of "There Is No Game", but NOT a horror game.
 
-This is **Stage 1: Basic Idle Loop**.
+This is **Stage 2: Data-Driven Generators**.
 
 ## Godot version
 
@@ -11,11 +11,12 @@ Godot 4.7 (engine features: `4.7`, `Forward Plus`).
 
 ## Current stage
 
-**Stage 1 - Basic Idle Loop.** The project currently implements Bits,
-manual generation, a Worker generator with 1 Bit/sec passive production,
-and a small event-driven UI. Stage 0 foundation systems remain in place;
-upgrades, achievements, prestige, offline progress, fourth-wall events,
-and data-driven generator content are not implemented.
+**Stage 2 - Data-Driven Generators.** The project implements Bits, manual
+generation, five generator definitions, generic generator counts and pricing,
+delta-based production, and a dynamic Processes panel built from reusable
+GeneratorRow components. Stage 0 foundation systems remain in place; upgrades,
+achievements, prestige, offline progress, and fourth-wall events are not
+implemented.
 
 ## Project structure
 
@@ -44,14 +45,14 @@ res://
 
 ## Main architectural systems
 
-- **Game** (`autoload/game.gd`): owns runtime idle-game state. Does NOT
-  own UI state.
+- **Game** (`autoload/game.gd`): owns runtime Bits and generic generator
+  counts. Does NOT own UI state or generator definitions.
 - **EventBus** (`autoload/event_bus.gd`): typed signal hub. Independent
   systems communicate through it rather than reaching into each other.
 - **SaveManager** (`autoload/save_manager.gd`): save versioning, backup
   support, and migration hooks. No actual save data yet.
-- **ContentDB** (`autoload/content_db.gd`): foundation for loading
-  data-driven Resources (currencies, generators, etc.).
+- **ContentDB** (`autoload/content_db.gd`): validates, indexes, and orders
+  data-driven generator definitions.
 - **StoryManager** (`autoload/story_manager.gd`): generic story flags
   and current chapter. Emits EventBus events on changes.
 - **MetaDirector** (`autoload/meta_director.gd`): schedules and runs
@@ -96,12 +97,11 @@ The main scene is `res://ui/main/Main.tscn`.
 
 ## What should be built next
 
-**STAGE 2 - DATA-DRIVEN GENERATORS**
+**STAGE 3 - PERSISTENCE AND PROGRESSION**
 
 The next stage may add:
 
-- Data-driven generator definitions and resources via ContentDB.
-- Additional generator content and reusable generator UI rows.
-- Save/load of Stage 1 runtime state.
+- Save/load of runtime generator state.
+- Additional progression systems such as upgrades or achievements.
 
 All of it must follow the architecture rules in `docs/ARCHITECTURE.md`.

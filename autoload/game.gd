@@ -2,33 +2,15 @@ extends Node
 
 const AUTOLOAD_REGISTRY := preload("res://autoload/autoload_registry.gd")
 
-## Game
-##
-## Owns the important runtime idle-game state.
-## Does NOT own UI state. UI observes Game through EventBus.
-##
-## Stage 1: basic idle loop.
-##   - One currency: Bits
-##   - Manual click reward: +1 Bit
-##   - One generator: Worker (1 Bit/sec, cost 10, scaling 1.15x)
-
-## Currency id for the single starting currency.
-const CURRENCY_BITS: StringName = StringName("bits")
-
-## Manual click reward in Bits.
+## Runtime gameplay state. Generator definitions live in ContentDB and counts
+## are keyed by stable generator id, so new content needs no Game.gd changes.
+const CURRENCY_BITS: StringName = &"bits"
 const MANUAL_CLICK_POWER: float = 1.0
+const WORKER_ID: StringName = &"worker" # Transitional Stage 1 compatibility id.
 
-## Worker generator constants.
-const WORKER_ID: StringName = StringName("worker")
-const WORKER_BASE_PRODUCTION: float = 1.0   # Bits per second per Worker
-const WORKER_BASE_COST: float = 10.0
-const WORKER_COST_SCALING: float = 1.15
-
-## Current Bits amount.
 var bits: float = 0.0
-
-## Number of Workers owned.
-var worker_count: int = 0
+var generator_counts: Dictionary = {}
+var _unlocked_generator_ids: Dictionary = {}
 
 
 func _ready() -> void:
@@ -39,18 +21,17 @@ func _process(delta: float) -> void:
 	update_production(delta)
 
 
-## Reset all runtime state to initial values.
 func _reset_runtime_state() -> void:
 	bits = 0.0
-	worker_count = 0
+	generator_counts.clear()
+	_unlocked_generator_ids.clear()
+	_refresh_generator_unlocks()
 
 
-## Return the current Bits amount.
 func get_currency() -> float:
 	return bits
 
 
-## Add Bits and emit currency_changed.
 func add_currency(amount: float) -> void:
 	var old := bits
 	bits = maxf(0.0, bits + amount)
@@ -58,11 +39,8 @@ func add_currency(amount: float) -> void:
 		_emit_currency_changed(old, bits)
 
 
-## Attempt to spend Bits. Returns true on success, false if insufficient.
 func spend_currency(amount: float) -> bool:
-	if amount < 0.0:
-		return false
-	if bits < amount:
+	if amount < 0.0 or bits < amount:
 		return false
 	var old := bits
 	bits -= amount
@@ -70,87 +48,179 @@ func spend_currency(amount: float) -> bool:
 	return true
 
 
-## Return true if the player can afford the given amount.
 func can_afford(amount: float) -> bool:
 	return amount >= 0.0 and bits >= amount
 
 
-## Perform one manual generate click.
 func generate_manual() -> void:
 	add_currency(MANUAL_CLICK_POWER)
 
 
-## Return the current Worker count.
-func get_worker_count() -> int:
-	return worker_count
+func get_generator_count(generator_id: StringName) -> int:
+	return int(generator_counts.get(generator_id, 0))
 
 
-## Return the cost of the next Worker (base_cost * scaling^owned).
-## Costs deliberately retain fractional Bits so the UI and affordability check use
-## one exact formula rather than applying different rounding rules.
-func get_worker_cost() -> float:
-	return WORKER_BASE_COST * pow(WORKER_COST_SCALING, worker_count)
-
-
-## Attempt to buy one Worker.
-## Returns true on success, false if the player cannot afford it.
-func buy_worker() -> bool:
-	var cost := get_worker_cost()
-	if not can_afford(cost):
+func is_generator_unlocked(generator_id: StringName) -> bool:
+	if _get_generator_definition(generator_id) == null:
 		return false
-	spend_currency(cost)
-	worker_count += 1
-	_emit_generator_bought(WORKER_ID, worker_count)
+	_refresh_generator_unlocks()
+	return _unlocked_generator_ids.has(generator_id)
+
+
+func get_unlocked_generators() -> Array:
+	_refresh_generator_unlocks()
+	var content_db := _get_content_db()
+	if content_db == null:
+		return []
+	var unlocked: Array = []
+	for definition in content_db.get_generators():
+		if _unlocked_generator_ids.has(definition.id):
+			unlocked.append(definition)
+	return unlocked
+
+
+func get_generator_cost(generator_id: StringName) -> float:
+	var definition := _get_generator_definition(generator_id)
+	if definition == null:
+		return -1.0
+	return ceil(definition.base_cost * pow(definition.cost_scaling, get_generator_count(generator_id)))
+
+
+func can_buy_generator(generator_id: StringName) -> bool:
+	if not is_generator_unlocked(generator_id):
+		return false
+	var cost := get_generator_cost(generator_id)
+	return cost >= 0.0 and can_afford(cost)
+
+
+func buy_generator(generator_id: StringName) -> bool:
+	if not can_buy_generator(generator_id):
+		return false
+	var cost := get_generator_cost(generator_id)
+	var previous_count := get_generator_count(generator_id)
+	# Increment first so currency_changed observers see the completed purchase.
+	generator_counts[generator_id] = previous_count + 1
+	if not spend_currency(cost):
+		generator_counts[generator_id] = previous_count
+		return false
+	_refresh_generator_unlocks()
+	_emit_generator_bought(generator_id, previous_count + 1)
 	return true
 
 
-## Return total passive Bits production per second.
-func get_production_per_second() -> float:
-	return worker_count * WORKER_BASE_PRODUCTION
+func get_generator_production(generator_id: StringName) -> float:
+	var definition := _get_generator_definition(generator_id)
+	if definition == null:
+		return 0.0
+	return get_generator_count(generator_id) * definition.base_production
 
 
-## Process passive production. Call this from _process or _physics_process.
+func get_total_production_per_second() -> float:
+	var content_db := _get_content_db()
+	if content_db == null:
+		return 0.0
+	var total := 0.0
+	for definition in content_db.get_generators():
+		total += get_generator_production(definition.id)
+	return total
+
+
 func update_production(delta: float) -> void:
-	var prod := get_production_per_second()
-	if prod <= 0.0:
-		return
-	add_currency(prod * delta)
+	var production := get_total_production_per_second()
+	if production > 0.0:
+		add_currency(production * delta)
 
 
-## Debug helper: instantly add Bits without spending.
 func debug_add_currency(amount: float) -> void:
 	add_currency(amount)
 
 
-## Debug helper: instantly set Worker count.
+## Transitional compatibility helpers retained for Stage 1 callers/tests.
+func get_worker_count() -> int:
+	return get_generator_count(WORKER_ID)
+
+
+func get_worker_cost() -> float:
+	return get_generator_cost(WORKER_ID)
+
+
+func buy_worker() -> bool:
+	return buy_generator(WORKER_ID)
+
+
+func get_production_per_second() -> float:
+	return get_total_production_per_second()
+
+
 func set_worker_count(count: int) -> void:
-	worker_count = max(0, count)
-	_emit_generator_bought(WORKER_ID, worker_count)
+	generator_counts[WORKER_ID] = max(0, count)
+	_refresh_generator_unlocks()
+	_emit_generator_bought(WORKER_ID, get_worker_count())
 
 
-## Emit currency_changed through EventBus (decoupled).
-func _emit_currency_changed(old: float, new: float) -> void:
-	var eb := AUTOLOAD_REGISTRY.get_autoload(get_tree(), &"event_bus")
-	if eb != null:
-		eb.currency_changed.emit(CURRENCY_BITS, old, new)
-
-
-## Emit generator_bought through EventBus (decoupled).
-func _emit_generator_bought(generator_id: StringName, new_count: int) -> void:
-	var eb := AUTOLOAD_REGISTRY.get_autoload(get_tree(), &"event_bus")
-	if eb != null:
-		eb.generator_bought.emit(generator_id, new_count)
-
-
-## Return a snapshot of gameplay state (used by SaveManager).
 func get_state() -> Dictionary:
 	return {
 		"bits": bits,
-		"worker_count": worker_count,
+		"generator_counts": generator_counts.duplicate(),
 	}
 
 
-## Restore gameplay state from a snapshot.
 func set_state(state: Dictionary) -> void:
 	bits = maxf(0.0, float(state.get("bits", 0.0)))
-	worker_count = int(state.get("worker_count", 0))
+	generator_counts.clear()
+	var saved_counts = state.get("generator_counts", {})
+	if saved_counts is Dictionary:
+		for raw_id in saved_counts:
+			var generator_id := StringName(raw_id)
+			if _get_generator_definition(generator_id) != null:
+				generator_counts[generator_id] = max(0, int(saved_counts[raw_id]))
+	# Read the Stage 1 snapshot shape without maintaining parallel state.
+	elif state.has("worker_count"):
+		generator_counts[WORKER_ID] = max(0, int(state.get("worker_count", 0)))
+	_unlocked_generator_ids.clear()
+	_refresh_generator_unlocks()
+
+
+func _refresh_generator_unlocks() -> Array[StringName]:
+	var content_db := _get_content_db()
+	if content_db == null:
+		return []
+	var newly_unlocked: Array[StringName] = []
+	for definition in content_db.get_generators():
+		if _unlocked_generator_ids.has(definition.id):
+			continue
+		if _meets_unlock_requirement(definition):
+			_unlocked_generator_ids[definition.id] = true
+			newly_unlocked.append(definition.id)
+	return newly_unlocked
+
+
+func _meets_unlock_requirement(definition: GeneratorDefinition) -> bool:
+	if definition.unlock_after_generator_id.is_empty():
+		return true
+	if _get_generator_definition(definition.unlock_after_generator_id) == null:
+		return false
+	return get_generator_count(definition.unlock_after_generator_id) >= definition.unlock_after_generator_count
+
+
+func _get_generator_definition(generator_id: StringName) -> GeneratorDefinition:
+	var content_db := _get_content_db()
+	if content_db == null:
+		return null
+	return content_db.get_generator(generator_id) as GeneratorDefinition
+
+
+func _get_content_db() -> Node:
+	return AUTOLOAD_REGISTRY.get_autoload(get_tree(), &"content_db")
+
+
+func _emit_currency_changed(old: float, new: float) -> void:
+	var event_bus := AUTOLOAD_REGISTRY.get_autoload(get_tree(), &"event_bus")
+	if event_bus != null:
+		event_bus.currency_changed.emit(CURRENCY_BITS, old, new)
+
+
+func _emit_generator_bought(generator_id: StringName, new_count: int) -> void:
+	var event_bus := AUTOLOAD_REGISTRY.get_autoload(get_tree(), &"event_bus")
+	if event_bus != null:
+		event_bus.generator_bought.emit(generator_id, new_count)

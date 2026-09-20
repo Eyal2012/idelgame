@@ -1,8 +1,8 @@
-[gd_scene load_steps=2 format=3]
+[gd_scene format=3 uid="uid://dniy1d540yvbo"]
 
-[ext_resource type="Script" path="res://ui/main/normal_ui.gd" id="1_normal_ui"]
+[ext_resource type="Script" uid="uid://d35ak40c8q6p1" path="res://ui/main/normal_ui.gd" id="1_normal_ui"]
 
-[node name="NormalUI" type="Control" id="1_normal_ui"]
+[node name="NormalUI" type="Control" unique_id=1970088017]
 layout_mode = 3
 anchors_preset = 15
 anchor_right = 1.0
@@ -11,7 +11,7 @@ grow_horizontal = 2
 grow_vertical = 2
 script = ExtResource("1_normal_ui")
 
-[node name="Background" type="ColorRect" parent="."]
+[node name="Background" type="ColorRect" parent="." unique_id=527034436]
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
@@ -21,7 +21,7 @@ grow_vertical = 2
 mouse_filter = 2
 color = Color(0.035, 0.043, 0.06, 1)
 
-[node name="RootMargin" type="MarginContainer" parent="."]
+[node name="RootMargin" type="MarginContainer" parent="." unique_id=1771342650]
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
@@ -33,286 +33,195 @@ theme_override_constants/margin_top = 18
 theme_override_constants/margin_right = 18
 theme_override_constants/margin_bottom = 18
 
-[node name="WorkspaceVBox" type="VBoxContainer" parent="RootMargin"]
+[node name="WorkspaceVBox" type="VBoxContainer" parent="RootMargin" unique_id=395750523]
 layout_mode = 2
 theme_override_constants/separation = 12
 
-[node name="HeaderPanel" type="PanelContainer" parent="RootMargin/WorkspaceVBox"]
+[node name="HeaderPanel" type="PanelContainer" parent="RootMargin/WorkspaceVBox" unique_id=302863203]
 custom_minimum_size = Vector2(0, 46)
 layout_mode = 2
 
-[node name="HeaderRow" type="HBoxContainer" parent="RootMargin/WorkspaceVBox/HeaderPanel"]
+[node name="HeaderRow" type="HBoxContainer" parent="RootMargin/WorkspaceVBox/HeaderPanel" unique_id=1758821869]
 layout_mode = 2
 theme_override_constants/separation = 18
 
-[node name="BrandLabel" type="Label" parent="RootMargin/WorkspaceVBox/HeaderPanel/HeaderRow"]
+[node name="BrandLabel" type="Label" parent="RootMargin/WorkspaceVBox/HeaderPanel/HeaderRow" unique_id=655162647]
 custom_minimum_size = Vector2(142, 0)
 layout_mode = 2
-theme_override_text_font_size = 22
 text = "BIT//SHIFT"
 vertical_alignment = 1
 
-[node name="HeaderSpacer" type="Control" parent="RootMargin/WorkspaceVBox/HeaderPanel/HeaderRow"]
+[node name="HeaderSpacer" type="Control" parent="RootMargin/WorkspaceVBox/HeaderPanel/HeaderRow" unique_id=1448082122]
 layout_mode = 2
 size_flags_horizontal = 3
 mouse_filter = 2
 
-[node name="SystemStatusLabel" type="Label" parent="RootMargin/WorkspaceVBox/HeaderPanel/HeaderRow"]
+[node name="SystemStatusLabel" type="Label" parent="RootMargin/WorkspaceVBox/HeaderPanel/HeaderRow" unique_id=628516188]
 layout_mode = 2
-theme_override_text_font_size = 12
 text = "●  SYSTEM ONLINE"
 vertical_alignment = 1
 
-[node name="BuildLabel" type="Label" parent="RootMargin/WorkspaceVBox/HeaderPanel/HeaderRow"]
+[node name="BuildLabel" type="Label" parent="RootMargin/WorkspaceVBox/HeaderPanel/HeaderRow" unique_id=1132238049]
 custom_minimum_size = Vector2(96, 0)
 layout_mode = 2
-theme_override_text_font_size = 12
 text = "BUILD 0.0.1"
 horizontal_alignment = 2
 vertical_alignment = 1
 
-[node name="WorkspaceRow" type="HBoxContainer" parent="RootMargin/WorkspaceVBox"]
+[node name="WorkspaceRow" type="HBoxContainer" parent="RootMargin/WorkspaceVBox" unique_id=1933397991]
 layout_mode = 2
 size_flags_vertical = 3
 theme_override_constants/separation = 12
 
-[node name="SidebarPanel" type="PanelContainer" parent="RootMargin/WorkspaceVBox/WorkspaceRow"]
+[node name="SidebarPanel" type="PanelContainer" parent="RootMargin/WorkspaceVBox/WorkspaceRow" unique_id=783775245]
 custom_minimum_size = Vector2(142, 0)
 layout_mode = 2
 size_flags_vertical = 3
 
-[node name="SidebarVBox" type="VBoxContainer" parent="RootMargin/WorkspaceVBox/WorkspaceRow/SidebarPanel"]
+[node name="SidebarVBox" type="VBoxContainer" parent="RootMargin/WorkspaceVBox/WorkspaceRow/SidebarPanel" unique_id=1352993507]
 layout_mode = 2
 theme_override_constants/separation = 10
 
-[node name="SidebarTitleLabel" type="Label" parent="RootMargin/WorkspaceVBox/WorkspaceRow/SidebarPanel/SidebarVBox"]
+[node name="SidebarTitleLabel" type="Label" parent="RootMargin/WorkspaceVBox/WorkspaceRow/SidebarPanel/SidebarVBox" unique_id=1496341243]
 layout_mode = 2
-theme_override_text_font_size = 12
 text = "SYSTEM"
 
-[node name="SidebarRule" type="HSeparator" parent="RootMargin/WorkspaceVBox/WorkspaceRow/SidebarPanel/SidebarVBox"]
+[node name="SidebarRule" type="HSeparator" parent="RootMargin/WorkspaceVBox/WorkspaceRow/SidebarPanel/SidebarVBox" unique_id=624958238]
 layout_mode = 2
 
-[node name="CoreNavLabel" type="Label" parent="RootMargin/WorkspaceVBox/WorkspaceRow/SidebarPanel/SidebarVBox"]
+[node name="CoreNavLabel" type="Label" parent="RootMargin/WorkspaceVBox/WorkspaceRow/SidebarPanel/SidebarVBox" unique_id=470317545]
 layout_mode = 2
-theme_override_text_font_size = 14
 text = "›  CORE"
 
-[node name="ProcessesNavLabel" type="Label" parent="RootMargin/WorkspaceVBox/WorkspaceRow/SidebarPanel/SidebarVBox"]
+[node name="ProcessesNavLabel" type="Label" parent="RootMargin/WorkspaceVBox/WorkspaceRow/SidebarPanel/SidebarVBox" unique_id=481683426]
 layout_mode = 2
-theme_override_text_font_size = 14
 text = "   PROCESSES"
 
-[node name="UpgradesNavLabel" type="Label" parent="RootMargin/WorkspaceVBox/WorkspaceRow/SidebarPanel/SidebarVBox"]
+[node name="UpgradesNavLabel" type="Label" parent="RootMargin/WorkspaceVBox/WorkspaceRow/SidebarPanel/SidebarVBox" unique_id=1868079414]
 layout_mode = 2
-theme_override_text_font_size = 14
 text = "   UPGRADES"
 
-[node name="ArchiveNavLabel" type="Label" parent="RootMargin/WorkspaceVBox/WorkspaceRow/SidebarPanel/SidebarVBox"]
+[node name="ArchiveNavLabel" type="Label" parent="RootMargin/WorkspaceVBox/WorkspaceRow/SidebarPanel/SidebarVBox" unique_id=1077213067]
 layout_mode = 2
-theme_override_text_font_size = 14
 text = "   ARCHIVE"
 
-[node name="SidebarSpacer" type="Control" parent="RootMargin/WorkspaceVBox/WorkspaceRow/SidebarPanel/SidebarVBox"]
+[node name="SidebarSpacer" type="Control" parent="RootMargin/WorkspaceVBox/WorkspaceRow/SidebarPanel/SidebarVBox" unique_id=181753365]
 layout_mode = 2
 size_flags_vertical = 3
 mouse_filter = 2
 
-[node name="SettingsNavLabel" type="Label" parent="RootMargin/WorkspaceVBox/WorkspaceRow/SidebarPanel/SidebarVBox"]
+[node name="SettingsNavLabel" type="Label" parent="RootMargin/WorkspaceVBox/WorkspaceRow/SidebarPanel/SidebarVBox" unique_id=1597298298]
 layout_mode = 2
-theme_override_text_font_size = 14
 text = "   SETTINGS"
 
-[node name="CorePanel" type="PanelContainer" parent="RootMargin/WorkspaceVBox/WorkspaceRow"]
+[node name="CorePanel" type="PanelContainer" parent="RootMargin/WorkspaceVBox/WorkspaceRow" unique_id=1003921917]
 custom_minimum_size = Vector2(280, 0)
 layout_mode = 2
 size_flags_horizontal = 3
 size_flags_vertical = 3
 
-[node name="CoreVBox" type="VBoxContainer" parent="RootMargin/WorkspaceVBox/WorkspaceRow/CorePanel"]
+[node name="CoreVBox" type="VBoxContainer" parent="RootMargin/WorkspaceVBox/WorkspaceRow/CorePanel" unique_id=1170358678]
 layout_mode = 2
 theme_override_constants/separation = 8
 
-[node name="CoreTitleLabel" type="Label" parent="RootMargin/WorkspaceVBox/WorkspaceRow/CorePanel/CoreVBox"]
+[node name="CoreTitleLabel" type="Label" parent="RootMargin/WorkspaceVBox/WorkspaceRow/CorePanel/CoreVBox" unique_id=488391440]
 layout_mode = 2
-theme_override_text_font_size = 13
 text = "COMPUTATION CORE"
 horizontal_alignment = 1
 
-[node name="CoreRule" type="HSeparator" parent="RootMargin/WorkspaceVBox/WorkspaceRow/CorePanel/CoreVBox"]
+[node name="CoreRule" type="HSeparator" parent="RootMargin/WorkspaceVBox/WorkspaceRow/CorePanel/CoreVBox" unique_id=12616942]
 layout_mode = 2
 
-[node name="CoreFrame" type="CenterContainer" parent="RootMargin/WorkspaceVBox/WorkspaceRow/CorePanel/CoreVBox"]
+[node name="CoreFrame" type="CenterContainer" parent="RootMargin/WorkspaceVBox/WorkspaceRow/CorePanel/CoreVBox" unique_id=92909054]
 layout_mode = 2
 size_flags_vertical = 3
 
-[node name="CoreButton" type="Button" parent="RootMargin/WorkspaceVBox/WorkspaceRow/CorePanel/CoreVBox/CoreFrame"]
+[node name="CoreButton" type="Button" parent="RootMargin/WorkspaceVBox/WorkspaceRow/CorePanel/CoreVBox/CoreFrame" unique_id=1658408684]
 custom_minimum_size = Vector2(250, 250)
 layout_mode = 2
 mouse_default_cursor_shape = 2
 
-[node name="CoreReadout" type="VBoxContainer" parent="RootMargin/WorkspaceVBox/WorkspaceRow/CorePanel/CoreVBox/CoreFrame/CoreButton"]
+[node name="CoreReadout" type="VBoxContainer" parent="RootMargin/WorkspaceVBox/WorkspaceRow/CorePanel/CoreVBox/CoreFrame/CoreButton" unique_id=659659683]
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
-offset_left = 24.0
-offset_top = 24.0
-offset_right = -24.0
-offset_bottom = -24.0
+offset_left = 28.0
+offset_top = 25.0
+offset_right = -20.0
+offset_bottom = -23.0
 grow_horizontal = 2
 grow_vertical = 2
 mouse_filter = 2
 theme_override_constants/separation = 6
 alignment = 1
 
-[node name="CoreCaptionLabel" type="Label" parent="RootMargin/WorkspaceVBox/WorkspaceRow/CorePanel/CoreVBox/CoreFrame/CoreButton/CoreReadout"]
+[node name="CoreCaptionLabel" type="Label" parent="RootMargin/WorkspaceVBox/WorkspaceRow/CorePanel/CoreVBox/CoreFrame/CoreButton/CoreReadout" unique_id=1887455977]
 layout_mode = 2
-mouse_filter = 2
-theme_override_text_font_size = 12
 text = "MANUAL COMPUTATION"
 horizontal_alignment = 1
 
-[node name="BitsLabel" type="Label" parent="RootMargin/WorkspaceVBox/WorkspaceRow/CorePanel/CoreVBox/CoreFrame/CoreButton/CoreReadout"]
+[node name="BitsLabel" type="Label" parent="RootMargin/WorkspaceVBox/WorkspaceRow/CorePanel/CoreVBox/CoreFrame/CoreButton/CoreReadout" unique_id=1243343124]
 layout_mode = 2
-mouse_filter = 2
-theme_override_text_font_size = 32
 text = "0 BITS"
 horizontal_alignment = 1
 
-[node name="CorePromptLabel" type="Label" parent="RootMargin/WorkspaceVBox/WorkspaceRow/CorePanel/CoreVBox/CoreFrame/CoreButton/CoreReadout"]
+[node name="CorePromptLabel" type="Label" parent="RootMargin/WorkspaceVBox/WorkspaceRow/CorePanel/CoreVBox/CoreFrame/CoreButton/CoreReadout" unique_id=1226131777]
 layout_mode = 2
-mouse_filter = 2
-theme_override_text_font_size = 11
 text = "CLICK TO COMPUTE"
 horizontal_alignment = 1
 
-[node name="PerSecondLabel" type="Label" parent="RootMargin/WorkspaceVBox/WorkspaceRow/CorePanel/CoreVBox"]
+[node name="PerSecondLabel" type="Label" parent="RootMargin/WorkspaceVBox/WorkspaceRow/CorePanel/CoreVBox" unique_id=1119598367]
 layout_mode = 2
-theme_override_text_font_size = 16
 text = "+0 BITS / SEC"
 horizontal_alignment = 1
 
-[node name="CoreStatusLabel" type="Label" parent="RootMargin/WorkspaceVBox/WorkspaceRow/CorePanel/CoreVBox"]
+[node name="CoreStatusLabel" type="Label" parent="RootMargin/WorkspaceVBox/WorkspaceRow/CorePanel/CoreVBox" unique_id=2040459855]
 layout_mode = 2
-theme_override_text_font_size = 11
 text = "CORE READY // INPUT ACCEPTED"
 horizontal_alignment = 1
 
-[node name="ProcessesPanel" type="PanelContainer" parent="RootMargin/WorkspaceVBox/WorkspaceRow"]
+[node name="ProcessesPanel" type="PanelContainer" parent="RootMargin/WorkspaceVBox/WorkspaceRow" unique_id=1838091630]
 custom_minimum_size = Vector2(260, 0)
 layout_mode = 2
 size_flags_vertical = 3
 
-[node name="ProcessesVBox" type="VBoxContainer" parent="RootMargin/WorkspaceVBox/WorkspaceRow/ProcessesPanel"]
+[node name="ProcessesVBox" type="VBoxContainer" parent="RootMargin/WorkspaceVBox/WorkspaceRow/ProcessesPanel" unique_id=106307974]
 layout_mode = 2
 theme_override_constants/separation = 10
 
-[node name="ProcessesTitleLabel" type="Label" parent="RootMargin/WorkspaceVBox/WorkspaceRow/ProcessesPanel/ProcessesVBox"]
+[node name="ProcessesTitleLabel" type="Label" parent="RootMargin/WorkspaceVBox/WorkspaceRow/ProcessesPanel/ProcessesVBox" unique_id=1327792712]
 layout_mode = 2
-theme_override_text_font_size = 13
 text = "PROCESSES"
 
-[node name="ProcessesRule" type="HSeparator" parent="RootMargin/WorkspaceVBox/WorkspaceRow/ProcessesPanel/ProcessesVBox"]
+[node name="ProcessesRule" type="HSeparator" parent="RootMargin/WorkspaceVBox/WorkspaceRow/ProcessesPanel/ProcessesVBox" unique_id=1357660414]
 layout_mode = 2
 
-[node name="ProcessScroll" type="ScrollContainer" parent="RootMargin/WorkspaceVBox/WorkspaceRow/ProcessesPanel/ProcessesVBox"]
+[node name="ProcessScroll" type="ScrollContainer" parent="RootMargin/WorkspaceVBox/WorkspaceRow/ProcessesPanel/ProcessesVBox" unique_id=288182461]
 layout_mode = 2
 size_flags_vertical = 3
 horizontal_scroll_mode = 0
 
-[node name="ProcessRows" type="VBoxContainer" parent="RootMargin/WorkspaceVBox/WorkspaceRow/ProcessesPanel/ProcessesVBox/ProcessScroll"]
+[node name="ProcessRows" type="VBoxContainer" parent="RootMargin/WorkspaceVBox/WorkspaceRow/ProcessesPanel/ProcessesVBox/ProcessScroll" unique_id=337196376]
 layout_mode = 2
 size_flags_horizontal = 3
 theme_override_constants/separation = 8
 
-[node name="WorkerCard" type="PanelContainer" parent="RootMargin/WorkspaceVBox/WorkspaceRow/ProcessesPanel/ProcessesVBox/ProcessScroll/ProcessRows"]
-layout_mode = 2
-size_flags_horizontal = 3
-
-[node name="CardVBox" type="VBoxContainer" parent="RootMargin/WorkspaceVBox/WorkspaceRow/ProcessesPanel/ProcessesVBox/ProcessScroll/ProcessRows/WorkerCard"]
-layout_mode = 2
-theme_override_constants/separation = 8
-
-[node name="WorkerTitleLabel" type="Label" parent="RootMargin/WorkspaceVBox/WorkspaceRow/ProcessesPanel/ProcessesVBox/ProcessScroll/ProcessRows/WorkerCard/CardVBox"]
-layout_mode = 2
-theme_override_text_font_size = 16
-text = "WORKER PROCESS"
-
-[node name="WorkerDescLabel" type="Label" parent="RootMargin/WorkspaceVBox/WorkspaceRow/ProcessesPanel/ProcessesVBox/ProcessScroll/ProcessRows/WorkerCard/CardVBox"]
-layout_mode = 2
-theme_override_text_font_size = 12
-text = "Basic autonomous compute task."
-autowrap_mode = 2
-
-[node name="CardRule" type="HSeparator" parent="RootMargin/WorkspaceVBox/WorkspaceRow/ProcessesPanel/ProcessesVBox/ProcessScroll/ProcessRows/WorkerCard/CardVBox"]
-layout_mode = 2
-
-[node name="OwnedRow" type="HBoxContainer" parent="RootMargin/WorkspaceVBox/WorkspaceRow/ProcessesPanel/ProcessesVBox/ProcessScroll/ProcessRows/WorkerCard/CardVBox"]
-layout_mode = 2
-
-[node name="OwnedKeyLabel" type="Label" parent="RootMargin/WorkspaceVBox/WorkspaceRow/ProcessesPanel/ProcessesVBox/ProcessScroll/ProcessRows/WorkerCard/CardVBox/OwnedRow"]
-layout_mode = 2
-size_flags_horizontal = 3
-theme_override_text_font_size = 11
-text = "OWNED"
-
-[node name="WorkerOwnedLabel" type="Label" parent="RootMargin/WorkspaceVBox/WorkspaceRow/ProcessesPanel/ProcessesVBox/ProcessScroll/ProcessRows/WorkerCard/CardVBox/OwnedRow"]
-layout_mode = 2
-theme_override_text_font_size = 14
-text = "0"
-horizontal_alignment = 2
-
-[node name="OutputRow" type="HBoxContainer" parent="RootMargin/WorkspaceVBox/WorkspaceRow/ProcessesPanel/ProcessesVBox/ProcessScroll/ProcessRows/WorkerCard/CardVBox"]
-layout_mode = 2
-
-[node name="OutputKeyLabel" type="Label" parent="RootMargin/WorkspaceVBox/WorkspaceRow/ProcessesPanel/ProcessesVBox/ProcessScroll/ProcessRows/WorkerCard/CardVBox/OutputRow"]
-layout_mode = 2
-size_flags_horizontal = 3
-theme_override_text_font_size = 11
-text = "OUTPUT"
-
-[node name="WorkerProductionLabel" type="Label" parent="RootMargin/WorkspaceVBox/WorkspaceRow/ProcessesPanel/ProcessesVBox/ProcessScroll/ProcessRows/WorkerCard/CardVBox/OutputRow"]
-layout_mode = 2
-theme_override_text_font_size = 14
-text = "1 Bit / sec"
-horizontal_alignment = 2
-
-[node name="CostRow" type="HBoxContainer" parent="RootMargin/WorkspaceVBox/WorkspaceRow/ProcessesPanel/ProcessesVBox/ProcessScroll/ProcessRows/WorkerCard/CardVBox"]
-layout_mode = 2
-
-[node name="CostKeyLabel" type="Label" parent="RootMargin/WorkspaceVBox/WorkspaceRow/ProcessesPanel/ProcessesVBox/ProcessScroll/ProcessRows/WorkerCard/CardVBox/CostRow"]
-layout_mode = 2
-size_flags_horizontal = 3
-theme_override_text_font_size = 11
-text = "COST"
-
-[node name="WorkerCostLabel" type="Label" parent="RootMargin/WorkspaceVBox/WorkspaceRow/ProcessesPanel/ProcessesVBox/ProcessScroll/ProcessRows/WorkerCard/CardVBox/CostRow"]
-layout_mode = 2
-theme_override_text_font_size = 14
-text = "10 Bits"
-horizontal_alignment = 2
-
-[node name="BuyWorkerButton" type="Button" parent="RootMargin/WorkspaceVBox/WorkspaceRow/ProcessesPanel/ProcessesVBox/ProcessScroll/ProcessRows/WorkerCard/CardVBox"]
-layout_mode = 2
-theme_override_font_size = 13
-text = "ACQUIRE"
-
-[node name="LogPanel" type="PanelContainer" parent="RootMargin/WorkspaceVBox"]
+[node name="LogPanel" type="PanelContainer" parent="RootMargin/WorkspaceVBox" unique_id=1252896171]
 custom_minimum_size = Vector2(0, 96)
 layout_mode = 2
 
-[node name="LogVBox" type="VBoxContainer" parent="RootMargin/WorkspaceVBox/LogPanel"]
+[node name="LogVBox" type="VBoxContainer" parent="RootMargin/WorkspaceVBox/LogPanel" unique_id=1337480974]
 layout_mode = 2
 theme_override_constants/separation = 4
 
-[node name="LogTitleLabel" type="Label" parent="RootMargin/WorkspaceVBox/LogPanel/LogVBox"]
+[node name="LogTitleLabel" type="Label" parent="RootMargin/WorkspaceVBox/LogPanel/LogVBox" unique_id=997629010]
 layout_mode = 2
-theme_override_text_font_size = 12
 text = "SYSTEM LOG"
 
-[node name="SystemLogLabel" type="Label" parent="RootMargin/WorkspaceVBox/LogPanel/LogVBox"]
+[node name="SystemLogLabel" type="Label" parent="RootMargin/WorkspaceVBox/LogPanel/LogVBox" unique_id=739834531]
 layout_mode = 2
 theme_override_colors/font_color = Color(0.53, 0.63, 0.7, 1)
-theme_override_text_font_size = 12
-text = "> Runtime initialized\n> Manual computation available\n> Awaiting operator input..."
+text = "> Runtime initialized
+> Manual computation available
+> Awaiting operator input..."

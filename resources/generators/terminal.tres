@@ -1,0 +1,16 @@
+[gd_resource type="Resource" script_class="GeneratorDefinition" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://core/generators/generator_definition.gd" id="1_definition"]
+
+[resource]
+script = ExtResource("1_definition")
+id = &"terminal"
+display_name = "TERMINAL NODE"
+description = "Dedicated command-line compute process."
+base_cost = 100.0
+cost_scaling = 1.15
+base_production = 8.0
+sort_order = 10
+unlock_after_generator_id = &"worker"
+unlock_after_generator_count = 1
+accent_color = Color(0.329412, 0.815686, 0.886275, 1)

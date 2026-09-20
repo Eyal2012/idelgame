@@ -7,7 +7,7 @@ extends Node
 const NORMAL_UI_SCENE := preload("res://ui/main/NormalUI.tscn")
 const MAIN_SCENE := preload("res://ui/main/Main.tscn")
 const CONTENT_PATH := NodePath("RootMargin/WorkspaceVBox/WorkspaceRow")
-const WORKER_CARD_PATH := NodePath("RootMargin/WorkspaceVBox/WorkspaceRow/ProcessesPanel/ProcessesVBox/ProcessScroll/ProcessRows/WorkerCard")
+const PROCESS_VIEWPORT_PATH := NodePath("RootMargin/WorkspaceVBox/WorkspaceRow/ProcessesPanel/ProcessesVBox/ProcessScroll")
 const TEST_SIZES := [Vector2(1280, 720), Vector2(1920, 1080), Vector2(900, 600)]
 const EPSILON := 1.0
 
@@ -39,14 +39,14 @@ func _validate_size(viewport_size: Vector2) -> PackedStringArray:
 		errors.append("%s: NormalUI size is %s, expected %s" % [viewport_size, ui.size, viewport_size])
 
 	var content := ui.get_node_or_null(CONTENT_PATH) as Control
-	var worker_card := ui.get_node_or_null(WORKER_CARD_PATH) as Control
-	if content == null or worker_card == null:
+	var process_viewport := ui.get_node_or_null(PROCESS_VIEWPORT_PATH) as Control
+	if content == null or process_viewport == null:
 		errors.append("%s: required content nodes are missing" % viewport_size)
 	else:
 		_check_bounds(errors, viewport_size, "content", content.get_global_rect())
-		_check_bounds(errors, viewport_size, "worker card", worker_card.get_global_rect())
-		if worker_card.size.x < 220.0 or worker_card.size.x > viewport_size.x + EPSILON:
-			errors.append("%s: worker card width %.1f is outside the supported range" % [viewport_size, worker_card.size.x])
+		_check_bounds(errors, viewport_size, "process viewport", process_viewport.get_global_rect())
+		if process_viewport.size.x < 220.0 or process_viewport.size.x > viewport_size.x + EPSILON:
+			errors.append("%s: process viewport width %.1f is outside the supported range" % [viewport_size, process_viewport.size.x])
 
 	host.queue_free()
 	await get_tree().process_frame

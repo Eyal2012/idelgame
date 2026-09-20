@@ -54,8 +54,8 @@ func validate() -> String:
 	if abs(game.get_production_per_second() - 1.0) > 0.0001:
 		errors.append("D: production should be 1/sec with 1 worker, got %s" % game.get_production_per_second())
 
-	# --- E. Next Worker price (1.15 scaling) ---
-	var expected_second_cost = 10.0 * pow(1.15, 1)
+	# --- E. Next Worker price (1.15 scaling, Stage 2 ceil policy) ---
+	var expected_second_cost = ceil(10.0 * pow(1.15, 1))
 	var actual_second_cost = game.get_worker_cost()
 	if abs(actual_second_cost - expected_second_cost) > 0.01:
 		errors.append("E: second worker cost should be ~%s, got %s" % [expected_second_cost, actual_second_cost])

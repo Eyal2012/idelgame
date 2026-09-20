@@ -27,12 +27,6 @@ func validate() -> String:
 		"RootMargin/WorkspaceVBox/WorkspaceRow/CorePanel/CoreVBox/CoreFrame/CoreButton/CoreReadout/BitsLabel",
 		"RootMargin/WorkspaceVBox/WorkspaceRow/CorePanel/CoreVBox/PerSecondLabel",
 		"RootMargin/WorkspaceVBox/WorkspaceRow/ProcessesPanel/ProcessesVBox/ProcessScroll/ProcessRows",
-		"RootMargin/WorkspaceVBox/WorkspaceRow/ProcessesPanel/ProcessesVBox/ProcessScroll/ProcessRows/WorkerCard",
-		"RootMargin/WorkspaceVBox/WorkspaceRow/ProcessesPanel/ProcessesVBox/ProcessScroll/ProcessRows/WorkerCard/CardVBox/WorkerTitleLabel",
-		"RootMargin/WorkspaceVBox/WorkspaceRow/ProcessesPanel/ProcessesVBox/ProcessScroll/ProcessRows/WorkerCard/CardVBox/OwnedRow/WorkerOwnedLabel",
-		"RootMargin/WorkspaceVBox/WorkspaceRow/ProcessesPanel/ProcessesVBox/ProcessScroll/ProcessRows/WorkerCard/CardVBox/OutputRow/WorkerProductionLabel",
-		"RootMargin/WorkspaceVBox/WorkspaceRow/ProcessesPanel/ProcessesVBox/ProcessScroll/ProcessRows/WorkerCard/CardVBox/CostRow/WorkerCostLabel",
-		"RootMargin/WorkspaceVBox/WorkspaceRow/ProcessesPanel/ProcessesVBox/ProcessScroll/ProcessRows/WorkerCard/CardVBox/BuyWorkerButton",
 		"RootMargin/WorkspaceVBox/LogPanel/LogVBox/SystemLogLabel",
 	]
 

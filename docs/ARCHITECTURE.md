@@ -104,3 +104,20 @@ functional after a meta event ends.
 Fake OS interactions (fake dialogs, fake file prompts, fake crashes)
 should be simulated entirely inside the game. They must never touch the
 real operating system or real files.
+
+## 19. Generators are data-driven definitions.
+
+`GeneratorDefinition` resources in `res://resources/generators/` own each
+generator's stable id, display data, pricing, production, and sort order.
+`ContentDB` validates and orders those definitions. `Game` stores only counts
+keyed by generator id and exposes generic purchase/production APIs.
+
+Adding a generator must normally require only a new `GeneratorDefinition`
+resource. Do not add generator-specific variables, purchase methods, or UI
+cards to `Game.gd` or `NormalUI.gd`.
+
+## 20. Processes UI is dynamic.
+
+`NormalUI` creates one reusable `GeneratorRow` for every definition returned
+by `ContentDB`. A row presents state and sends purchase requests to `Game`; it
+does not own progression state or calculate pricing.
