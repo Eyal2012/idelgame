@@ -81,7 +81,7 @@ func _validate_anomaly_and_shift(errors: PackedStringArray, game: Node, saves: N
 		get_viewport().size = viewport_size
 		await get_tree().process_frame
 		shift.set_shift_active_for_test(true)
-		if not shift.is_shift_active() or root_margin.position == base_position or not overlay.visible or not operator_button.visible:
+		if not shift.is_shift_active() or root_margin.position != base_position or not overlay.visible or not operator_button.visible:
 			errors.append("F/I: SHIFT layer did not activate at %s" % viewport_size)
 		shift.set_shift_active_for_test(false)
 		if shift.is_shift_active() or root_margin.position != base_position or overlay.visible:

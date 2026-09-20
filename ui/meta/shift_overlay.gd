@@ -6,11 +6,19 @@ signal operator_selected()
 
 var _core_panel: Control
 var _operator_button: Button
+var _diagnostic: Control
 
 
 func _ready() -> void:
 	set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_diagnostic = Control.new()
+	_diagnostic.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	_diagnostic.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	var shade := ColorRect.new(); shade.color = Color(0.02, 0.08, 0.12, 0.32); shade.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT); shade.mouse_filter = Control.MOUSE_FILTER_IGNORE; _diagnostic.add_child(shade)
+	for spec in [["MEMORY BUS // ACTIVE", Vector2(28,82)], ["PROCESS MAP // DIAGNOSTIC", Vector2(28,110)], ["ADDRESS SPACE // 0x0000", Vector2(28,138)]]:
+		var label:=Label.new();label.text=spec[0];label.position=spec[1];label.add_theme_font_size_override("font_size",10);label.add_theme_color_override("font_color",Color(0.36,0.9,0.95,0.72));label.mouse_filter=Control.MOUSE_FILTER_IGNORE;_diagnostic.add_child(label)
+	add_child(_diagnostic)
 	_operator_button = Button.new()
 	_operator_button.name = "HiddenOperator"
 	_operator_button.text = "UNREGISTERED PROCESS\nPID: ???\nOWNER: UNKNOWN"
@@ -39,6 +47,7 @@ func configure(core_panel: Control) -> void:
 
 func set_shift_active(active: bool) -> void:
 	visible = active
+	if _diagnostic != null: _diagnostic.visible = active
 	if _operator_button == null:
 		return
 	_operator_button.visible = active and not _is_operator_discovered()

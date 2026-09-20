@@ -3,7 +3,7 @@ extends Node
 const AUTOLOAD_REGISTRY := preload("res://autoload/autoload_registry.gd")
 
 ## Versioned, JSON persistence for runtime gameplay state.
-const SAVE_VERSION: int = 3
+const SAVE_VERSION: int = 4
 const SAVE_PATH: String = "user://save.json"
 const BACKUP_PATH: String = "user://save_backup.json"
 const TEMP_PATH: String = "user://save.tmp"
@@ -48,11 +48,13 @@ func _notification(what: int) -> void:
 func build_save_data() -> Dictionary:
 	var game := _get_game()
 	var story := AUTOLOAD_REGISTRY.get_autoload(get_tree(), &"story_manager")
+	var memory := AUTOLOAD_REGISTRY.get_autoload(get_tree(), &"memory_puzzle")
 	return {
 		"save_version": SAVE_VERSION,
 		"saved_at_unix": int(Time.get_unix_time_from_system()),
 		"game": game.get_save_data() if game != null else {"bits": 0.0, "generator_counts": {}},
 		"story": story.get_save_data() if story != null else {"flags": {}},
+		"memory_puzzle": memory.get_save_data() if memory != null else {},
 	}
 
 
@@ -91,6 +93,8 @@ func load_game() -> bool:
 	var story := AUTOLOAD_REGISTRY.get_autoload(get_tree(), &"story_manager")
 	if story != null:
 		story.apply_save_data(normalized.get("story", {}))
+	var memory := AUTOLOAD_REGISTRY.get_autoload(get_tree(), &"memory_puzzle")
+	if memory != null: memory.apply_save_data(normalized.get("memory_puzzle", {}))
 	_apply_offline_progress(game, int(normalized.get("saved_at_unix", 0)))
 	_has_loaded_session = true
 	_emit_load_completed(true)
@@ -109,6 +113,8 @@ func migrate_save(data: Dictionary) -> Dictionary:
 				migrated = _migrate_v1_to_v2(migrated)
 			2:
 				migrated = _migrate_v2_to_v3(migrated)
+			3:
+				migrated = _migrate_v3_to_v4(migrated)
 			_:
 				break
 		version = _sanitize_version(migrated.get("save_version", SAVE_VERSION))
@@ -148,6 +154,8 @@ func _migrate_v2_to_v3(data: Dictionary) -> Dictionary:
 	result["game"] = game_data
 	result["save_version"] = 3
 	return result
+func _migrate_v3_to_v4(data: Dictionary) -> Dictionary:
+	var result:=data.duplicate(true);result["memory_puzzle"]={"active":false,"completed":false,"escrow":0,"restored":[false,false,false,false,false],"slots":[-1,-1,-1,-1,-1],"hint_level":0};result["save_version"]=4;return result
 
 
 ## Validator injection: never point tests at the player's default files.
@@ -175,6 +183,8 @@ func reset_save(include_backup: bool = true) -> void:
 	if game != null:
 		game.reset_save_data()
 	_reset_story_state()
+	var memory:=AUTOLOAD_REGISTRY.get_autoload(get_tree(),&"memory_puzzle")
+	if memory!=null:memory.reset()
 
 
 func _reset_story_state() -> void:

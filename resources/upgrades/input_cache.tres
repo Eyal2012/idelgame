@@ -3,9 +3,12 @@
 [resource]
 script=ExtResource("1")
 id=&"input_cache"
-display_name="INPUT CACHE"
-description="Caches one additional unit of manual input."
-cost=50.0
+display_name="WORKER INPUT LINK"
+description="Links manual input directly to the Worker execution network.\nEach additional Worker amplifies manual computation."
+cost=60.0
 sort_order=0
-effect_type=&"manual_add"
-effect_value=1.0
+effect_type=&"generator_manual_exponential"
+target_id=&"worker"
+effect_value=1.08
+unlock_generator_id=&"worker"
+unlock_generator_count=3

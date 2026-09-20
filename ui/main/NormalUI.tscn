@@ -172,6 +172,11 @@ layout_mode = 2
 text = "0 BITS"
 horizontal_alignment = 1
 
+[node name="ManualPowerLabel" type="Label" parent="RootMargin/WorkspaceVBox/WorkspaceRow/CorePanel/CoreVBox/CoreFrame/CoreButton/CoreReadout"]
+layout_mode = 2
+text = "MANUAL POWER // 1 BIT / CLICK"
+horizontal_alignment = 1
+
 [node name="CorePromptLabel" type="Label" parent="RootMargin/WorkspaceVBox/WorkspaceRow/CorePanel/CoreVBox/CoreFrame/CoreButton/CoreReadout" unique_id=1226131777]
 layout_mode = 2
 text = "CLICK TO COMPUTE"

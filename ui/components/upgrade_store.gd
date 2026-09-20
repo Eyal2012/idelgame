@@ -43,7 +43,11 @@ func _select(id:StringName)->void:
 	var db:=AUTOLOAD_REGISTRY.get_autoload(get_tree(),&"content_db");var game:=AUTOLOAD_REGISTRY.get_autoload(get_tree(),&"game");var d:UpgradeDefinition=db.get_upgrade(id) as UpgradeDefinition if db!=null else null
 	if d==null:return
 	_inspector.visible=true;custom_minimum_size.y=204
-	var owned:bool=game.is_upgrade_owned(id);_detail.text="%s  //  %s\n%s\nEFFECT // %s x%s   COST // %s BITS"%[d.display_name,"INSTALLED" if owned else "AVAILABLE",d.description,d.effect_type,d.effect_value,NUMBER_FORMATTER.format(d.cost)];_install.visible=not owned;_install.disabled=owned or not game.can_buy_upgrade(id)
+	var owned:bool=game.is_upgrade_owned(id);_detail.text="%s  //  %s\n%s\nEFFECT // %s   COST // %s BITS"%[d.display_name,"INSTALLED" if owned else "AVAILABLE",d.description,_effect_text(d),NUMBER_FORMATTER.format(d.cost)];_install.visible=not owned;_install.disabled=owned or not game.can_buy_upgrade(id)
+
+func _effect_text(definition:UpgradeDefinition)->String:
+	if definition.effect_type==&"generator_manual_exponential":return "MANUAL POWER ×%s PER %s"%[NUMBER_FORMATTER.format(definition.effect_value,2),String(definition.target_id).to_upper()]
+	return "%s x%s"%[definition.effect_type,NUMBER_FORMATTER.format(definition.effect_value,2)]
 func _install_selected()->void:
 	var game:=AUTOLOAD_REGISTRY.get_autoload(get_tree(),&"game")
 	if game!=null and game.buy_upgrade(_selected):_selected=&"";_refresh()

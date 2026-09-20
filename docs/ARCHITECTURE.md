@@ -200,3 +200,25 @@ generic upgrade ownership and applies modifiers in this order: base geometric
 generator production, target-generator multipliers, then global multipliers.
 UI presents definitions only. Save v3 adds generic `owned_upgrades`; migration
 v2 -> v3 defaults it to an empty array while retaining all existing state.
+
+## 30. MemoryPuzzle authority and physical interaction
+
+`MemoryPuzzle` owns the Stage 5 accounting event: fixed escrow, active/completed
+state, stable Bit ids, slot mapping, hints, intro/completion sequencing, and
+save normalization. UI must never mutate `restored`, `slots`, or Bits directly.
+Click-to-place and drag/drop both reach the same `place_bit(bit_id, slot_id)`
+method. A slot mapping is authoritative over UI state and must remain one bit to
+one slot.
+
+`MemoryPuzzleOverlay` is a responsive, non-modal presentation shell. It may
+animate detached cells back to safe positions, draw diagnostic traces, and show
+socket states, but it does not own progression. While SHIFT is active it exposes
+four primary Memory Bus addresses; it exposes the fifth reserved address only at
+four restored cells. Normal UI layout is never translated for this diagnostic
+state, and invisible puzzle controls must not intercept normal gameplay input.
+
+SaveManager persists the puzzle through its v4 `memory_puzzle` block. Load-time
+sanitization discards unknown or duplicate ids, prevents escrow outside the
+fixed five-Bit amount, resolves all-five mappings as completed without a new
+reward, and prevents completed state from retaining escrow. Mid-puzzle hints
+persist enough timing state to avoid immediate replay spam.

@@ -3,7 +3,7 @@
 An expandable 2D idle game with fourth-wall-breaking/meta mechanics
 inspired by the idea of "There Is No Game", but NOT a horror game.
 
-This is **Stage 4.6: Data-Driven Upgrade Store**.
+This is **Stage 5: Memory Bus Recovery**.
 
 ## Godot version
 
@@ -11,13 +11,13 @@ Godot 4.7 (engine features: `4.7`, `Forward Plus`).
 
 ## Current stage
 
-**Stage 4.5 - Balanced Economy.** BIT//SHIFT begins as a computation-management
-idle game, but its longer-term identity is an original puzzle/adventure inside a
-fictional system. The normal surface now has geometric per-copy production,
-exact BUY 1 / BUY 10 / MAX purchasing, compact shop feedback, and deterministic
-data-driven pacing. The one-time SHIFT anomaly and hidden `OPERATOR` process
-remain intact; Memory Leak, overflow, prestige, and later puzzle chapters are
-not implemented.
+**Stage 5 - Memory Bus Recovery.** After discovering OPERATOR, owning two
+modules, and bringing a Server online, a five-Bit accounting mismatch can occur.
+Five detached physical data cells can be selected/clicked into sockets or dragged
+onto them while normal production and every normal control continue to work.
+The normal UI remains stationary during SHIFT; the diagnostic layer exposes a
+Memory Bus, four primary addresses, and a fifth reserved address near System Log
+only after four cells are restored. Stage 6 and later mechanics are not started.
 
 ## Process economy
 
@@ -41,8 +41,33 @@ AVAILABLE grid exposes installable modules, while INSTALLED retains a dim text
 record. Effects stack as base geometric production × generator multipliers ×
 global multipliers; manual additions are applied to the base manual click.
 
-Save version 3 persists `owned_upgrades` as a stable ID array. v2 saves migrate
-without changing Bits, generator counts, or Story/OPERATOR flags.
+Save version 4 persists `owned_upgrades` as a stable ID array alongside the
+MemoryPuzzle block. v2 saves migrate without changing Bits, generator counts,
+or Story/OPERATOR flags.
+
+## Memory Bus Recovery
+
+`MemoryPuzzle` is the sole authority for the fixed five-Bit escrow, stable
+`bit_0` through `bit_4` identities, slot mapping, completion, and sanitization.
+The trigger debits exactly five Bits once; completion refunds exactly that escrow
+once. A save made mid-puzzle retains active state, occupied slots, the remaining
+escaped cell ids, fifth-address phase, and hint progress. Malformed puzzle data
+is normalized by discarding duplicate/unknown mappings, clamping escrow to the
+fixed amount, and never creating a large currency reward.
+
+`MemoryPuzzleOverlay` is presentation and input only. It provides compact cyan /
+violet data-cell controls, click-selection with socket-click fallback, and drag /
+drop. Both paths call the same `MemoryPuzzle.place_bit()` authority. Invalid
+drops tween back to a responsive safe position; releasing SHIFT during a drag
+only hides the socket targets, so the eventual release returns safely. The
+overlay is deliberately non-modal: it has no full-window input blocker.
+
+During SHIFT, restrained traces connect the Core-side diagnostic origin to the
+four Memory Bus slots. At four of five, `ADDRESS 04 // RESERVED` appears above
+the System Log with a faint diagnostic trace. Hints begin only in this state at
+30/60/90 seconds and persist their level/timer through save/load. Completion
+cleans up all Bit/socket controls and sequences the memory-restored / OPERATOR
+write messages without affecting normal economy systems.
 
 ## Save data
 
@@ -64,8 +89,9 @@ multiplied by elapsed time, capped at 24 hours. Save v1 migrates to v2 by adding
 safe default story flags. `ValidateStage3` uses only
 `user://stage3_validator_*` files and never touches player saves.
 
-Stage 4.5 changes only resource balance/math; no save-format change is needed.
-Existing generator counts and all story/OPERATOR flags load unchanged.
+Save version 4 adds the optional `memory_puzzle` block. v3 saves migrate to an
+inactive, zero-escrow puzzle; v4 loads also safely accept absent newer timing
+fields. Existing generator counts and all story/OPERATOR flags load unchanged.
 
 ## Project structure
 

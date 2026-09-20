@@ -17,7 +17,8 @@ func validate_definition() -> PackedStringArray:
 	var errors: PackedStringArray = []
 	if id.is_empty() or display_name.strip_edges().is_empty(): errors.append("Upgrade requires id and display name")
 	if cost < 0.0: errors.append("Upgrade %s has negative cost" % id)
-	if effect_type not in [&"manual_add", &"generator_multiplier", &"global_production_multiplier"]: errors.append("Upgrade %s has invalid effect type" % id)
+	if effect_type not in [&"manual_add", &"manual_multiplier", &"generator_manual_share", &"generator_manual_exponential", &"generator_multiplier", &"global_production_multiplier"]: errors.append("Upgrade %s has invalid effect type" % id)
 	if effect_value <= 0.0: errors.append("Upgrade %s has non-positive effect" % id)
+	if effect_type == &"generator_manual_exponential" and (target_id.is_empty() or effect_value <= 1.0): errors.append("Upgrade %s requires a generator target and growth above one" % id)
 	if not unlock_generator_id.is_empty() and unlock_generator_count < 1: errors.append("Upgrade %s has invalid unlock count" % id)
 	return errors

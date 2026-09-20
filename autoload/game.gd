@@ -57,10 +57,37 @@ func generate_manual() -> void:
 	add_currency(get_manual_generation_amount())
 
 func get_manual_generation_amount() -> float:
-	var total := MANUAL_CLICK_POWER
+	var base_power := MANUAL_CLICK_POWER
+	var multiplier := 1.0
+	var flat_bonus := 0.0
 	for upgrade in _get_owned_upgrade_definitions():
-		if upgrade.effect_type == &"manual_add": total += upgrade.effect_value
-	return total
+		match upgrade.effect_type:
+			&"manual_add":
+				flat_bonus += upgrade.effect_value
+			&"manual_multiplier":
+				multiplier *= upgrade.effect_value
+			&"generator_manual_exponential":
+				multiplier *= pow(upgrade.effect_value, get_generator_count(upgrade.target_id))
+			&"generator_manual_share":
+				# Retained for compatible future data; this is deliberately not used by
+				# WORKER INPUT LINK, whose input is ownership rather than production.
+				flat_bonus += get_generator_production(upgrade.target_id) * upgrade.effect_value
+	return base_power * multiplier + flat_bonus
+
+
+## Data-driven summaries for UI/readouts. No caller needs upgrade-id-specific logic.
+func get_manual_power_modifier_details() -> Array:
+	var details: Array = []
+	for upgrade in _get_owned_upgrade_definitions():
+		if upgrade.effect_type != &"generator_manual_exponential":
+			continue
+		var count := get_generator_count(upgrade.target_id)
+		details.append({
+			"upgrade": upgrade,
+			"generator_count": count,
+			"multiplier": pow(upgrade.effect_value, count),
+		})
+	return details
 
 func is_upgrade_owned(upgrade_id: StringName) -> bool: return owned_upgrades.has(upgrade_id)
 func is_upgrade_unlocked(upgrade_id: StringName) -> bool:

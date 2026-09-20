@@ -4,8 +4,10 @@ const AUTOLOAD_REGISTRY := preload("res://autoload/autoload_registry.gd")
 const GENERATOR_ROW_SCENE := preload("res://ui/components/GeneratorRow.tscn")
 const NUMBER_FORMATTER := preload("res://core/number_formatter.gd")
 const UPGRADE_STORE := preload("res://ui/components/upgrade_store.gd")
+const MEMORY_OVERLAY := preload("res://ui/meta/memory_puzzle_overlay.gd")
 
 var bits_label: Label
+var manual_power_label: Label
 var per_second_label: Label
 var core_button: Button
 var system_log_label: Label
@@ -20,6 +22,7 @@ var _unlock_message_pending: bool = false
 
 func _ready() -> void:
 	bits_label = get_node("RootMargin/WorkspaceVBox/WorkspaceRow/CorePanel/CoreVBox/CoreFrame/CoreButton/CoreReadout/BitsLabel")
+	manual_power_label = get_node("RootMargin/WorkspaceVBox/WorkspaceRow/CorePanel/CoreVBox/CoreFrame/CoreButton/CoreReadout/ManualPowerLabel")
 	per_second_label = get_node("RootMargin/WorkspaceVBox/WorkspaceRow/CorePanel/CoreVBox/PerSecondLabel")
 	core_button = get_node("RootMargin/WorkspaceVBox/WorkspaceRow/CorePanel/CoreVBox/CoreFrame/CoreButton")
 	system_log_label = get_node("RootMargin/WorkspaceVBox/LogPanel/LogVBox/SystemLogLabel")
@@ -32,6 +35,7 @@ func _ready() -> void:
 	var processes_vbox := process_rows.get_parent().get_parent() as VBoxContainer
 	processes_vbox.add_child(upgrade_store)
 	processes_vbox.move_child(upgrade_store, 0)
+	var memory_overlay:=MEMORY_OVERLAY.new();memory_overlay.name="MemoryPuzzleOverlay";add_child(memory_overlay)
 	_connect_signals()
 	_configure_shift_layer()
 	_apply_theme()
@@ -49,6 +53,8 @@ func _connect_signals() -> void:
 		event_bus.currency_changed.connect(_on_currency_changed)
 	if not event_bus.is_connected("generator_bought", _on_generator_bought):
 		event_bus.generator_bought.connect(_on_generator_bought)
+	if not event_bus.is_connected("upgrade_bought", _on_upgrade_bought):
+		event_bus.upgrade_bought.connect(_on_upgrade_bought)
 	if not event_bus.is_connected("load_completed", _on_load_completed):
 		event_bus.load_completed.connect(_on_load_completed)
 	if not event_bus.is_connected("system_log_message", _on_system_log_message):
@@ -108,6 +114,7 @@ func _apply_theme() -> void:
 	for path in ["ProcessesNavLabel", "UpgradesNavLabel", "ArchiveNavLabel", "SettingsNavLabel"]:
 		_set_label_color("RootMargin/WorkspaceVBox/WorkspaceRow/SidebarPanel/SidebarVBox/" + path, Color("66718d"))
 	_set_label_color("RootMargin/WorkspaceVBox/WorkspaceRow/CorePanel/CoreVBox/CoreTitleLabel", Color("9aa5c2"))
+	_set_label_color("RootMargin/WorkspaceVBox/WorkspaceRow/CorePanel/CoreVBox/CoreFrame/CoreButton/CoreReadout/ManualPowerLabel", Color("72d5ed"))
 	_set_label_color("RootMargin/WorkspaceVBox/WorkspaceRow/CorePanel/CoreVBox/PerSecondLabel", Color("72d5ed"))
 	_set_label_color("RootMargin/WorkspaceVBox/WorkspaceRow/CorePanel/CoreVBox/CoreStatusLabel", Color("7783a2"))
 	_set_label_color("RootMargin/WorkspaceVBox/WorkspaceRow/ProcessesPanel/ProcessesVBox/ProcessesTitleLabel", Color("9aa5c2"))
@@ -182,6 +189,19 @@ func _refresh() -> void:
 		return
 	bits_label.text = "%s BITS" % NUMBER_FORMATTER.format(game.get_currency())
 	per_second_label.text = "+%s BITS / SEC" % NUMBER_FORMATTER.format(game.get_total_production_per_second(), 2)
+	var manual_power: float = game.get_manual_generation_amount()
+	manual_power_label.text = "MANUAL POWER // %s %s / CLICK" % [NUMBER_FORMATTER.format(manual_power, 2), "BIT" if is_equal_approx(manual_power, 1.0) else "BITS"]
+	var modifier_details: Array = game.get_manual_power_modifier_details()
+	if modifier_details.is_empty():
+		get_node("RootMargin/WorkspaceVBox/WorkspaceRow/CorePanel/CoreVBox/CoreStatusLabel").text = "CORE READY // INPUT ACCEPTED"
+	else:
+		var detail: Dictionary = modifier_details[0]
+		var upgrade: UpgradeDefinition = detail["upgrade"]
+		var generator_count: int = int(detail["generator_count"])
+		var target_name := String(upgrade.target_id).to_upper()
+		if generator_count != 1:
+			target_name += "S"
+		get_node("RootMargin/WorkspaceVBox/WorkspaceRow/CorePanel/CoreVBox/CoreStatusLabel").text = "%s  ×%s FROM %d %s" % [upgrade.display_name, NUMBER_FORMATTER.format(float(detail["multiplier"]), 2), generator_count, target_name]
 
 
 func _on_generate_pressed() -> void:
@@ -229,6 +249,10 @@ func _on_generator_bought(_generator_id: StringName, _new_count: int) -> void:
 		var unlocked_definition: GeneratorDefinition = newly_displayed[0]
 		_unlock_message_pending = true
 		system_log_label.text = "> NEW PROCESS DISCOVERED\n> %s ONLINE\n> Awaiting operator input..." % unlocked_definition.display_name
+	_refresh()
+
+
+func _on_upgrade_bought(_upgrade_id: StringName) -> void:
 	_refresh()
 
 

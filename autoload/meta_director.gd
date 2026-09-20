@@ -36,6 +36,9 @@ func _ready() -> void:
 
 func _process(delta: float) -> void:
 	_check_first_anomaly_condition()
+	var memory := AUTOLOAD_REGISTRY.get_autoload(get_tree(), &"memory_puzzle")
+	if memory != null:
+		memory.try_trigger()
 	_update_first_anomaly(delta)
 	update(delta)
 

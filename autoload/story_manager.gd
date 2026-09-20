@@ -22,6 +22,9 @@ const DEFAULT_FLAGS: Dictionary = {
 	FIRST_ANOMALY_STARTED: false,
 	SHIFT_STATE_UNLOCKED: false,
 	OPERATOR_DISCOVERED: false,
+	&"memory_failure_started": false,
+	&"memory_failure_completed": false,
+	&"operator_write_detected": false,
 }
 
 

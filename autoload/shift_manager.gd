@@ -21,7 +21,7 @@ func register_shift_pair(normal_element: Control, hidden_element: Control, offse
 	for pair in _pairs:
 		if pair.normal == normal_element:
 			return
-	_pairs.append({"normal": normal_element, "hidden": hidden_element, "base_position": normal_element.position, "offset": offset})
+	_pairs.append({"normal": normal_element, "hidden": hidden_element, "base_position": normal_element.position, "offset": Vector2.ZERO})
 	hidden_element.visible = false
 
 
@@ -69,7 +69,8 @@ func _apply_pair(pair: Dictionary) -> void:
 	var hidden := pair.hidden as Control
 	if not is_instance_valid(normal) or not is_instance_valid(hidden):
 		return
-	normal.position = pair.base_position + pair.offset if _active else pair.base_position
+	# SHIFT is an alternate diagnostic state, never a layout transform.
+	normal.position = pair.base_position
 	hidden.visible = _active
 	if hidden.has_method("set_shift_active"):
 		hidden.set_shift_active(_active)

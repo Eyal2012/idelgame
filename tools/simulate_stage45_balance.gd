@@ -3,6 +3,9 @@ extends SceneTree
 ## Development-only deterministic economy sketch. It never touches Game/save data.
 const IDS := [&"worker", &"terminal", &"server", &"factory", &"data_center"]
 const MANUAL_INCOME_PER_SECOND := 0.5
+## Calibration only: this does not alter gameplay or prescribe a player CPS.
+const MANUAL_GROWTH_CANDIDATES := [1.06, 1.07, 1.08, 1.09, 1.10]
+const MANUAL_WORKER_COUNTS := [0, 1, 5, 10, 25, 50]
 
 
 func _init() -> void:
@@ -36,6 +39,12 @@ func _init() -> void:
 		print("first_%s=%.1fs" % [generator_id, float(milestones.get(generator_id, -1.0))])
 	print("longest_no_purchase_gap=%.1fs" % longest_gap)
 	print("end_time=%.1fs bits=%s" % [time, bits])
+	print("MANUAL_POWER_CANDIDATES // BITS_PER_CLICK")
+	for growth in MANUAL_GROWTH_CANDIDATES:
+		var values: PackedStringArray = []
+		for count in MANUAL_WORKER_COUNTS:
+			values.append("%d=%.2f" % [count, pow(growth, count)])
+		print("growth=%.2f %s" % [growth, ", ".join(values)])
 	quit()
 
 
