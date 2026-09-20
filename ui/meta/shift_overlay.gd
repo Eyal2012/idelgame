@@ -1,23 +1,23 @@
 extends Control
 
 const AUTOLOAD_REGISTRY := preload("res://autoload/autoload_registry.gd")
+const DIAGNOSTIC_VISUAL := preload("res://ui/meta/shift_diagnostic_visual.gd")
 
 signal operator_selected()
 
 var _core_panel: Control
 var _operator_button: Button
 var _diagnostic: Control
+var _fade_tween: Tween
 
 
 func _ready() -> void:
 	set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	mouse_filter = Control.MOUSE_FILTER_IGNORE
-	_diagnostic = Control.new()
+	_diagnostic = DIAGNOSTIC_VISUAL.new()
 	_diagnostic.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	_diagnostic.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	var shade := ColorRect.new(); shade.color = Color(0.02, 0.08, 0.12, 0.32); shade.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT); shade.mouse_filter = Control.MOUSE_FILTER_IGNORE; _diagnostic.add_child(shade)
-	for spec in [["MEMORY BUS // ACTIVE", Vector2(28,82)], ["PROCESS MAP // DIAGNOSTIC", Vector2(28,110)], ["ADDRESS SPACE // 0x0000", Vector2(28,138)]]:
-		var label:=Label.new();label.text=spec[0];label.position=spec[1];label.add_theme_font_size_override("font_size",10);label.add_theme_color_override("font_color",Color(0.36,0.9,0.95,0.72));label.mouse_filter=Control.MOUSE_FILTER_IGNORE;_diagnostic.add_child(label)
+	var shade := ColorRect.new(); shade.color = Color(0.02, 0.07, 0.10, 0.28); shade.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT); shade.mouse_filter = Control.MOUSE_FILTER_IGNORE; _diagnostic.add_child(shade)
 	add_child(_diagnostic)
 	_operator_button = Button.new()
 	_operator_button.name = "HiddenOperator"
@@ -43,10 +43,22 @@ func _ready() -> void:
 
 func configure(core_panel: Control) -> void:
 	_core_panel = core_panel
+	if _diagnostic != null and _diagnostic.has_method("configure"):
+		_diagnostic.configure(core_panel)
 
 
 func set_shift_active(active: bool) -> void:
-	visible = active
+	if is_instance_valid(_fade_tween):
+		_fade_tween.kill()
+	if active:
+		visible = true
+		modulate = Color(1.0, 1.0, 1.0, 0.0)
+		_fade_tween = create_tween()
+		_fade_tween.tween_property(self, "modulate", Color.WHITE, 0.15)
+	else:
+		# Release must restore normal input/visibility in the same frame.
+		visible = false
+		modulate = Color.WHITE
 	if _diagnostic != null: _diagnostic.visible = active
 	if _operator_button == null:
 		return

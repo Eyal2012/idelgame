@@ -18,6 +18,7 @@ var _completion_pulse: float = 0.0
 var _bit_normal: StyleBoxFlat
 var _bit_selected: StyleBoxFlat
 var _bit_dragging: StyleBoxFlat
+var _bit_hover: StyleBoxFlat
 var _socket_empty: StyleBoxFlat
 var _socket_valid: StyleBoxFlat
 var _socket_occupied: StyleBoxFlat
@@ -51,6 +52,13 @@ func _ready() -> void:
 		socket.pressed.connect(_on_socket_pressed.bind(slot_index))
 		add_child(socket)
 		slots[slot_index] = socket
+	var guidance := Label.new()
+	guidance.name = "Guidance"
+	guidance.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	guidance.add_theme_font_size_override("font_size", 11)
+	guidance.add_theme_color_override("font_color", Color("b8edf4"))
+	guidance.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	add_child(guidance)
 	_refresh()
 
 
@@ -64,6 +72,12 @@ func _refresh() -> void:
 	if puzzle == null:
 		return
 	var size_scale := _visual_scale()
+	var guidance := get_node("Guidance") as Label
+	guidance.position = Vector2(size.x * 0.5 - 150.0, 82.0)
+	guidance.size = Vector2(300.0, 40.0)
+	guidance.visible = puzzle.active and puzzle.are_bits_revealed()
+	if guidance.visible:
+		guidance.text = "HOLD [SHIFT] TO INSPECT INTERNAL ROUTES" if puzzle.selected_bit >= 0 or puzzle.get_restored_count() > 0 else "5 DATA CELLS DETACHED\nCLICK OR DRAG A DATA CELL"
 	for bit_index in range(5):
 		var bit := bits[bit_index] as Button
 		var bit_size := Vector2(50.0, 50.0) * size_scale
@@ -79,6 +93,7 @@ func _refresh() -> void:
 		bit.modulate = Color(1.0, 1.0, 1.0, 1.0) if bit_index != _drag_bit else Color(1.0, 1.0, 1.0, 1.0)
 		bit.scale = Vector2.ONE * (1.10 if bit_index == _drag_bit else 1.0)
 		bit.add_theme_stylebox_override("normal", _bit_dragging if bit_index == _drag_bit else _bit_selected if selected else _bit_normal)
+		bit.add_theme_stylebox_override("hover", _bit_dragging if bit_index == _drag_bit else _bit_selected if selected else _bit_hover)
 	var shift_active := _shift_active()
 	for slot_index in range(5):
 		var socket := slots[slot_index] as Button
@@ -225,10 +240,20 @@ func _spawn_position(bit_index: int, bit_size: Vector2) -> Vector2:
 
 
 func _primary_socket_position(slot_index: int, socket_size: Vector2) -> Vector2:
+	var core := get_parent().get_node_or_null("RootMargin/WorkspaceVBox/WorkspaceRow/CorePanel") as Control if get_parent() != null else null
+	if core != null:
+		var core_rect := core.get_global_rect()
+		var local_rect := Rect2(core_rect.position - get_global_rect().position, core_rect.size)
+		var center := local_rect.get_center()
+		var positions := [
+			Vector2(center.x - socket_size.x * 0.5, local_rect.position.y + 72.0),
+			Vector2(local_rect.position.x + 18.0, center.y - socket_size.y * 0.5),
+			Vector2(local_rect.end.x - socket_size.x - 18.0, center.y - socket_size.y * 0.5),
+			Vector2(center.x - socket_size.x * 0.5, local_rect.end.y - socket_size.y - 92.0),
+		]
+		return _clamp_position(positions[slot_index], socket_size)
 	var gap := 12.0 * _visual_scale()
-	var total_width := socket_size.x * 4.0 + gap * 3.0
-	var x := (size.x - total_width) * 0.5 + slot_index * (socket_size.x + gap)
-	return _clamp_position(Vector2(x, size.y * 0.28), socket_size)
+	return _clamp_position(Vector2((size.x - socket_size.x * 4.0 - gap * 3.0) * 0.5 + slot_index * (socket_size.x + gap), size.y * 0.28), socket_size)
 
 
 func _fifth_socket_position(socket_size: Vector2) -> Vector2:
@@ -255,27 +280,28 @@ func _draw() -> void:
 		return
 	var cyan := Color(0.30, 0.88, 0.96, 0.44)
 	var violet := Color(0.67, 0.46, 0.96, 0.36)
-	var bus_y := size.y * 0.31
-	var origin := Vector2(size.x * 0.50, size.y * 0.20)
+	var origin := Vector2(size.x * 0.50, size.y * 0.30)
+	var core := get_parent().get_node_or_null("RootMargin/WorkspaceVBox/WorkspaceRow/CorePanel") as Control if get_parent() != null else null
+	if core != null:
+		origin = core.get_global_rect().get_center() - get_global_rect().position
 	draw_circle(origin, 5.0 * _visual_scale(), cyan)
-	draw_line(origin, Vector2(origin.x, bus_y), cyan, 1.5)
 	for slot_index in range(4):
 		var socket := slots.get(slot_index) as Control
 		if socket != null:
-			var endpoint := socket.position + Vector2(socket.size.x * 0.5, 0.0)
-			draw_line(Vector2(origin.x, bus_y), Vector2(endpoint.x, bus_y), cyan, 1.2)
-			draw_line(Vector2(endpoint.x, bus_y), endpoint, cyan, 1.2)
+			var endpoint := socket.position + socket.size * 0.5
+			draw_line(origin, endpoint, cyan, 1.2)
 	if puzzle.is_fifth_address_active():
 		var fifth := slots.get(4) as Control
 		if fifth != null:
 			var target := fifth.position + Vector2(fifth.size.x * 0.5, 0.0)
-			draw_dashed_line(Vector2(origin.x, bus_y), target, violet, 1.4, 7.0)
+			draw_dashed_line(origin, target, violet, 1.4, 7.0)
 	if _completion_pulse > 0.0:
 		draw_circle(origin, (18.0 + 28.0 * _completion_pulse) * _visual_scale(), Color(0.56, 0.96, 0.86, _completion_pulse))
 
 
 func _build_styles() -> void:
 	_bit_normal = _style(Color("122338"), Color("58bfd1"), 1, 3)
+	_bit_hover = _style(Color("1d3853"), Color("9aeaf4"), 2, 3)
 	_bit_selected = _style(Color("1a2947"), Color("b78cff"), 2, 3)
 	_bit_dragging = _style(Color("203756"), Color("e1b9ff"), 2, 3)
 	_socket_empty = _style(Color("0c1424", 0.88), Color("4b7895"), 1, 2)

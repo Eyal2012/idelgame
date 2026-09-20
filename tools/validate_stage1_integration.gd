@@ -59,12 +59,12 @@ func _run_interaction_checks(errors: PackedStringArray, ui: Control, game: Node,
 		errors.append("Buy button starts enabled without 10 Bits")
 
 	generate_button.emit_signal("pressed")
-	if not is_equal_approx(game.get_currency(), 1.0) or bits_label.text != "1 BITS":
+	if not is_equal_approx(game.get_currency(), 1.0) or bits_label.text != "1\nBITS":
 		errors.append("Generate button did not update Game and BitsLabel to 1")
 
 	for _press in range(9):
 		generate_button.emit_signal("pressed")
-	if not is_equal_approx(game.get_currency(), 10.0) or bits_label.text != "10 BITS":
+	if not is_equal_approx(game.get_currency(), 10.0) or bits_label.text != "10\nBITS":
 		errors.append("Ten generate presses did not produce 10 Bits")
 	if buy_button.disabled:
 		errors.append("Buy button did not enable at 10 Bits")
@@ -85,7 +85,7 @@ func _run_interaction_checks(errors: PackedStringArray, ui: Control, game: Node,
 	var produced: float = game.get_currency() - production_start
 	if produced < 4.5 or produced > 5.5:
 		errors.append("Live passive production over five seconds was %.3f, expected about 5" % produced)
-	if not bits_label.text.ends_with(" BITS"):
+	if not bits_label.text.ends_with("\nBITS"):
 		errors.append("BitsLabel did not remain connected during passive production")
 
 	for _press in range(7):

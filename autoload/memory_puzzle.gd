@@ -99,7 +99,10 @@ func place_bit(bit_index: int, slot_index: int) -> bool:
 	slots[slot_index] = bit_index
 	selected_bit = -1
 	stuck_seconds = 0.0
-	_log("MEMORY CELL RESTORED // %d / 5" % get_restored_count())
+	if get_restored_count() == 4:
+		_log("BUFFER CAPACITY REACHED\n4 / 5 CELLS MAPPED\n1 ADDRESS UNRESOLVED")
+	else:
+		_log("MEMORY CELL RESTORED // %d / 5" % get_restored_count())
 	_event(&"memory_bit_restored", bit_index, slot_index)
 	if get_restored_count() == BIT_COUNT:
 		_complete()

@@ -73,9 +73,9 @@ func _refresh() -> void:
 	if game == null:
 		return
 	owned_value_label.text = str(game.get_generator_count(generator_id))
-	each_value_label.text = "NEXT +%s/s" % NUMBER_FORMATTER.format(game.get_next_generator_production(generator_id), 2)
-	total_value_label.text = "TOTAL +%s/s" % NUMBER_FORMATTER.format(game.get_generator_production(generator_id), 2)
-	cost_value_label.text = "1: %s  //  10: %s" % [NUMBER_FORMATTER.format(game.get_generator_bulk_cost(generator_id, 1)), NUMBER_FORMATTER.format(game.get_generator_bulk_cost(generator_id, 10))]
+	each_value_label.text = "NEXT\n+%s /s" % NUMBER_FORMATTER.format(game.get_next_generator_production(generator_id), 2)
+	total_value_label.text = "TOTAL\n+%s /s" % NUMBER_FORMATTER.format(game.get_generator_production(generator_id), 2)
+	cost_value_label.text = "NEXT COST\n%s BITS" % NUMBER_FORMATTER.format(game.get_generator_bulk_cost(generator_id, 1))
 	acquire_button.disabled = not game.can_buy_generator(generator_id)
 	buy_10_button.disabled = not game.can_afford(game.get_generator_bulk_cost(generator_id, 10))
 	max_button.disabled = game.get_max_affordable_generator_count(generator_id) < 1
@@ -136,17 +136,17 @@ func _apply_style() -> void:
 	var accent := _definition.accent_color if _definition != null else Color("8168d7")
 	var card := StyleBoxFlat.new()
 	card.bg_color = Color("151a31")
-	card.border_color = accent.darkened(0.2)
+	card.border_color = accent.darkened(0.55)
 	card.border_width_left = 2
-	card.border_width_top = 1
-	card.border_width_right = 1
-	card.border_width_bottom = 1
+	card.border_width_top = 0
+	card.border_width_right = 0
+	card.border_width_bottom = 0
 	card.set_corner_radius_all(6)
 	add_theme_stylebox_override("panel", card)
 	accent_label.add_theme_color_override("font_color", accent)
 	title_label.add_theme_color_override("font_color", Color("eceaff"))
 	owned_value_label.add_theme_color_override("font_color", Color("f4f1ff"))
-	each_value_label.add_theme_color_override("font_color", Color("9aa5c2"))
+	each_value_label.add_theme_color_override("font_color", Color("8490ac"))
 	total_value_label.add_theme_color_override("font_color", accent.lightened(0.12))
 	cost_value_label.add_theme_color_override("font_color", Color("9aa5c2"))
 

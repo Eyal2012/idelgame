@@ -28,6 +28,7 @@ func _ready() -> void:
 		var normal := main.get_node("UI/NormalUI") as Control
 		var overlay := normal.get_node_or_null("MemoryPuzzleOverlay") as Control
 		var meta_overlay := main.get_node("UI/MetaOverlay") as Control
+		_validate_ui_polish(errors, normal, meta_overlay)
 		await _validate_core_and_visuals(errors, game, story, puzzle, shift, overlay, normal, meta_overlay)
 		await _validate_save_states(errors, game, story, saves, puzzle)
 		_validate_invalid_state(errors, puzzle)
@@ -40,6 +41,23 @@ func _ready() -> void:
 		saves.restore_default_paths()
 	print("VALIDATION_RESULT:", "OK" if errors.is_empty() else "ERRORS: " + ", ".join(errors))
 	get_tree().quit()
+
+
+func _validate_ui_polish(errors: PackedStringArray, normal: Control, meta_overlay: Control) -> void:
+	var sidebar := normal.get_node("RootMargin/WorkspaceVBox/WorkspaceRow/SidebarPanel") as Control
+	var core_button := normal.get_node("RootMargin/WorkspaceVBox/WorkspaceRow/CorePanel/CoreVBox/CoreFrame/CoreButton") as Control
+	for node in meta_overlay.find_children("*", "Label", true, false):
+		var label := node as Label
+		if label.text.contains("MEMORY BUS") or label.text.contains("PROCESS MAP") or label.text.contains("ADDRESS SPACE"):
+			errors.append("UI diagnostic text remained in sidebar layer")
+	var diagnostic := meta_overlay.get_child(0) as Control
+	if diagnostic == null or diagnostic.mouse_filter != Control.MOUSE_FILTER_IGNORE:
+		errors.append("UI diagnostic decoration blocks input")
+	for node in core_button.get_node("CoreReadout").get_children():
+		if node is Control and not core_button.get_global_rect().encloses((node as Control).get_global_rect()):
+			errors.append("UI core readout escaped core bounds")
+	if sidebar.get_global_rect().has_point(core_button.get_global_rect().get_center()):
+		errors.append("UI core overlaps sidebar")
 
 
 func _arm(game: Node, story: Node, puzzle: Node) -> bool:
@@ -204,6 +222,13 @@ func _validate_responsive_reachability(errors: PackedStringArray, game: Node, st
 			if not (overlay.bits[bit_index] as Control).visible or rect.position.x < 0.0 or rect.position.y < 0.0 or rect.end.x > viewport_size.x or rect.end.y > viewport_size.y:
 				errors.append("AE unreachable bit at %s" % viewport_size)
 			centers.append(rect.get_center())
+		var processes := normal.get_node("RootMargin/WorkspaceVBox/WorkspaceRow/ProcessesPanel") as Control
+		for bit_index in range(5):
+			if (overlay.bits[bit_index] as Control).get_global_rect().intersects(processes.get_global_rect()):
+				errors.append("AE puzzle Bit covers Process controls at %s" % viewport_size)
+		for slot_index in range(4):
+			if (overlay.slots[slot_index] as Control).get_global_rect().intersects(processes.get_global_rect()):
+				errors.append("AE puzzle socket covers Process controls at %s" % viewport_size)
 		for left in range(centers.size()):
 			for right in range(left + 1, centers.size()):
 				if centers[left].distance_to(centers[right]) < 45.0:

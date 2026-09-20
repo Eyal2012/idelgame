@@ -164,28 +164,46 @@ alignment = 1
 
 [node name="CoreCaptionLabel" type="Label" parent="RootMargin/WorkspaceVBox/WorkspaceRow/CorePanel/CoreVBox/CoreFrame/CoreButton/CoreReadout" unique_id=1887455977]
 layout_mode = 2
-text = "MANUAL COMPUTATION"
+theme_override_font_sizes/font_size = 10
+text = "COMPUTATION CORE"
 horizontal_alignment = 1
 
 [node name="BitsLabel" type="Label" parent="RootMargin/WorkspaceVBox/WorkspaceRow/CorePanel/CoreVBox/CoreFrame/CoreButton/CoreReadout" unique_id=1243343124]
 layout_mode = 2
-text = "0 BITS"
+theme_override_font_sizes/font_size = 28
+text = "0\nBITS"
+horizontal_alignment = 1
+
+[node name="PerSecondInsideLabel" type="Label" parent="RootMargin/WorkspaceVBox/WorkspaceRow/CorePanel/CoreVBox/CoreFrame/CoreButton/CoreReadout"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 13
+text = "+0 / SEC"
 horizontal_alignment = 1
 
 [node name="ManualPowerLabel" type="Label" parent="RootMargin/WorkspaceVBox/WorkspaceRow/CorePanel/CoreVBox/CoreFrame/CoreButton/CoreReadout"]
 layout_mode = 2
-text = "MANUAL POWER // 1 BIT / CLICK"
+theme_override_font_sizes/font_size = 11
+text = "+1 / CLICK"
 horizontal_alignment = 1
 
 [node name="CorePromptLabel" type="Label" parent="RootMargin/WorkspaceVBox/WorkspaceRow/CorePanel/CoreVBox/CoreFrame/CoreButton/CoreReadout" unique_id=1226131777]
 layout_mode = 2
+theme_override_font_sizes/font_size = 11
 text = "CLICK TO COMPUTE"
 horizontal_alignment = 1
+
+[node name="WorkerLinkLabel" type="Label" parent="RootMargin/WorkspaceVBox/WorkspaceRow/CorePanel/CoreVBox/CoreFrame/CoreButton/CoreReadout"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 10
+text = ""
+horizontal_alignment = 1
+visible = false
 
 [node name="PerSecondLabel" type="Label" parent="RootMargin/WorkspaceVBox/WorkspaceRow/CorePanel/CoreVBox" unique_id=1119598367]
 layout_mode = 2
 text = "+0 BITS / SEC"
 horizontal_alignment = 1
+visible = false
 
 [node name="CoreStatusLabel" type="Label" parent="RootMargin/WorkspaceVBox/WorkspaceRow/CorePanel/CoreVBox" unique_id=2040459855]
 layout_mode = 2

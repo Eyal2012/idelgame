@@ -9,6 +9,7 @@ const MEMORY_OVERLAY := preload("res://ui/meta/memory_puzzle_overlay.gd")
 var bits_label: Label
 var manual_power_label: Label
 var per_second_label: Label
+var worker_link_label: Label
 var core_button: Button
 var system_log_label: Label
 var process_rows: VBoxContainer
@@ -23,7 +24,8 @@ var _unlock_message_pending: bool = false
 func _ready() -> void:
 	bits_label = get_node("RootMargin/WorkspaceVBox/WorkspaceRow/CorePanel/CoreVBox/CoreFrame/CoreButton/CoreReadout/BitsLabel")
 	manual_power_label = get_node("RootMargin/WorkspaceVBox/WorkspaceRow/CorePanel/CoreVBox/CoreFrame/CoreButton/CoreReadout/ManualPowerLabel")
-	per_second_label = get_node("RootMargin/WorkspaceVBox/WorkspaceRow/CorePanel/CoreVBox/PerSecondLabel")
+	per_second_label = get_node("RootMargin/WorkspaceVBox/WorkspaceRow/CorePanel/CoreVBox/CoreFrame/CoreButton/CoreReadout/PerSecondInsideLabel")
+	worker_link_label = get_node("RootMargin/WorkspaceVBox/WorkspaceRow/CorePanel/CoreVBox/CoreFrame/CoreButton/CoreReadout/WorkerLinkLabel")
 	core_button = get_node("RootMargin/WorkspaceVBox/WorkspaceRow/CorePanel/CoreVBox/CoreFrame/CoreButton")
 	system_log_label = get_node("RootMargin/WorkspaceVBox/LogPanel/LogVBox/SystemLogLabel")
 	process_rows = get_node("RootMargin/WorkspaceVBox/WorkspaceRow/ProcessesPanel/ProcessesVBox/ProcessScroll/ProcessRows")
@@ -114,8 +116,9 @@ func _apply_theme() -> void:
 	for path in ["ProcessesNavLabel", "UpgradesNavLabel", "ArchiveNavLabel", "SettingsNavLabel"]:
 		_set_label_color("RootMargin/WorkspaceVBox/WorkspaceRow/SidebarPanel/SidebarVBox/" + path, Color("66718d"))
 	_set_label_color("RootMargin/WorkspaceVBox/WorkspaceRow/CorePanel/CoreVBox/CoreTitleLabel", Color("9aa5c2"))
-	_set_label_color("RootMargin/WorkspaceVBox/WorkspaceRow/CorePanel/CoreVBox/CoreFrame/CoreButton/CoreReadout/ManualPowerLabel", Color("72d5ed"))
-	_set_label_color("RootMargin/WorkspaceVBox/WorkspaceRow/CorePanel/CoreVBox/PerSecondLabel", Color("72d5ed"))
+	_set_label_color("RootMargin/WorkspaceVBox/WorkspaceRow/CorePanel/CoreVBox/CoreFrame/CoreButton/CoreReadout/ManualPowerLabel", Color("aab7d8"))
+	_set_label_color("RootMargin/WorkspaceVBox/WorkspaceRow/CorePanel/CoreVBox/CoreFrame/CoreButton/CoreReadout/PerSecondInsideLabel", Color("72d5ed"))
+	_set_label_color("RootMargin/WorkspaceVBox/WorkspaceRow/CorePanel/CoreVBox/CoreFrame/CoreButton/CoreReadout/WorkerLinkLabel", Color("a99ad7"))
 	_set_label_color("RootMargin/WorkspaceVBox/WorkspaceRow/CorePanel/CoreVBox/CoreStatusLabel", Color("7783a2"))
 	_set_label_color("RootMargin/WorkspaceVBox/WorkspaceRow/ProcessesPanel/ProcessesVBox/ProcessesTitleLabel", Color("9aa5c2"))
 	_set_label_color("RootMargin/WorkspaceVBox/LogPanel/LogVBox/LogTitleLabel", Color("9aa5c2"))
@@ -187,21 +190,19 @@ func _refresh() -> void:
 	var game := AUTOLOAD_REGISTRY.get_autoload(get_tree(), &"game")
 	if game == null:
 		return
-	bits_label.text = "%s BITS" % NUMBER_FORMATTER.format(game.get_currency())
-	per_second_label.text = "+%s BITS / SEC" % NUMBER_FORMATTER.format(game.get_total_production_per_second(), 2)
+	bits_label.text = "%s\nBITS" % NUMBER_FORMATTER.format(game.get_currency())
+	per_second_label.text = "+%s / SEC" % NUMBER_FORMATTER.format(game.get_total_production_per_second(), 2)
 	var manual_power: float = game.get_manual_generation_amount()
-	manual_power_label.text = "MANUAL POWER // %s %s / CLICK" % [NUMBER_FORMATTER.format(manual_power, 2), "BIT" if is_equal_approx(manual_power, 1.0) else "BITS"]
+	manual_power_label.text = "+%s %s / CLICK" % [NUMBER_FORMATTER.format(manual_power, 2), "BIT" if is_equal_approx(manual_power, 1.0) else "BITS"]
 	var modifier_details: Array = game.get_manual_power_modifier_details()
 	if modifier_details.is_empty():
 		get_node("RootMargin/WorkspaceVBox/WorkspaceRow/CorePanel/CoreVBox/CoreStatusLabel").text = "CORE READY // INPUT ACCEPTED"
+		worker_link_label.visible = false
 	else:
 		var detail: Dictionary = modifier_details[0]
-		var upgrade: UpgradeDefinition = detail["upgrade"]
-		var generator_count: int = int(detail["generator_count"])
-		var target_name := String(upgrade.target_id).to_upper()
-		if generator_count != 1:
-			target_name += "S"
-		get_node("RootMargin/WorkspaceVBox/WorkspaceRow/CorePanel/CoreVBox/CoreStatusLabel").text = "%s  ×%s FROM %d %s" % [upgrade.display_name, NUMBER_FORMATTER.format(float(detail["multiplier"]), 2), generator_count, target_name]
+		worker_link_label.visible = true
+		worker_link_label.text = "WORKER LINK  ×%s" % NUMBER_FORMATTER.format(float(detail["multiplier"]), 2)
+		get_node("RootMargin/WorkspaceVBox/WorkspaceRow/CorePanel/CoreVBox/CoreStatusLabel").text = "CORE READY // LINK ACTIVE"
 
 
 func _on_generate_pressed() -> void:

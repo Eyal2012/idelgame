@@ -95,8 +95,8 @@ func _validate_shop_ui(errors: PackedStringArray, game: Node) -> void:
 		var buy_10 := row.get_node_or_null("Margin/VBox/PurchaseRow/Buy10Button") as Button
 		var max_button := row.get_node_or_null("Margin/VBox/PurchaseRow/MaxButton") as Button
 		var cost := row.get_node_or_null("Margin/VBox/PurchaseRow/CostValueLabel") as Label
-		if buy_10 == null or max_button == null or cost == null or not cost.text.contains("10:"):
-			errors.append("Shop bulk controls or exact cost presentation are missing")
+		if buy_10 == null or max_button == null or cost == null or not cost.text.contains("NEXT COST") or not cost.text.contains("BITS"):
+			errors.append("Shop bulk controls or clear next-cost presentation are missing")
 		else:
 			var before_count: int = game.get_generator_count(&"worker")
 			buy_10.emit_signal("pressed")

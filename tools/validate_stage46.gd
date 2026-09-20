@@ -76,12 +76,13 @@ func _validate_ui(errors: PackedStringArray, game: Node) -> void:
 	await get_tree().process_frame
 	var manual_power:=ui.get_node_or_null("RootMargin/WorkspaceVBox/WorkspaceRow/CorePanel/CoreVBox/CoreFrame/CoreButton/CoreReadout/ManualPowerLabel") as Label
 	var core_status:=ui.get_node_or_null("RootMargin/WorkspaceVBox/WorkspaceRow/CorePanel/CoreVBox/CoreStatusLabel") as Label
+	var worker_link:=ui.get_node_or_null("RootMargin/WorkspaceVBox/WorkspaceRow/CorePanel/CoreVBox/CoreFrame/CoreButton/CoreReadout/WorkerLinkLabel") as Label
 	if manual_power==null or not manual_power.text.contains("1 BIT / CLICK"): errors.append("Q manual base readout")
 	else:
 		var before_install:float=game.get_currency()
 		ui.upgrade_store._select(&"input_cache");ui.upgrade_store._install_selected()
 		if not game.is_upgrade_owned(&"input_cache") or abs(game.get_currency()-(before_install-60.0))>0.001: errors.append("Q manual install")
-		elif not manual_power.text.contains("1.26 BITS / CLICK") or core_status==null or not core_status.text.contains("WORKER INPUT LINK") or not core_status.text.contains("3 WORKER"): errors.append("Q manual installed readout")
+		elif not manual_power.text.contains("1.26 BITS / CLICK") or worker_link==null or not worker_link.visible or not worker_link.text.contains("1.26"): errors.append("Q manual installed readout")
 		elif game.buy_generators(&"worker",7)!=7 or not manual_power.text.contains("2.16 BITS / CLICK"): errors.append("Q manual buy ten refresh")
 		elif not game.buy_generator(&"worker") or not manual_power.text.contains("2.33 BITS / CLICK"): errors.append("Q manual immediate refresh")
 	var button:=ui.get_node_or_null("RootMargin/WorkspaceVBox/WorkspaceRow/SidebarPanel/SidebarVBox/UpgradesNavLabel") as Button
