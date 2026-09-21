@@ -3,7 +3,7 @@
 An expandable 2D idle game with fourth-wall-breaking/meta mechanics
 inspired by the idea of "There Is No Game", but NOT a horror game.
 
-This is **Stage 6: Access Mask**.
+This is **Stage 7: Scheduler Desync**.
 
 ## Godot version
 
@@ -11,11 +11,16 @@ Godot 4.7 (engine features: `4.7`, `Forward Plus`).
 
 ## Current stage
 
+**Stage 7 - Scheduler Desync.** After Stage 6 completion and a normal-play delay,
+Terminal Node is temporarily starved by a 25% scheduler inefficiency. SHIFT
+exposes an execution queue that the OPERATOR repairs with deterministic controls.
+Stage 8 remains final idle-game buildup only.
+
 **Stage 6 - Access Mask.** Stage 5.2's scaled Memory Blocks remain intact. After
 Stage 5 completion and a normal-play breathing period, a security audit starts
 with the fictional READ-only operator mask `0001`. New module installations are
 then denied without spending Bits until SHIFT exposes the compact Access Register
-and the player shifts the active bit left to `0010` (WRITE). Stage 7, INTEGER
+and the player shifts the active bit left to `0010` (WRITE). INTEGER
 OVERFLOW, and the later top-down internal world remain documentation-only.
 
 **Stage 5.2 - Scaled Memory Blocks.** After discovering OPERATOR, owning two
@@ -25,7 +30,7 @@ unaddressable Bits; each can be selected/clicked into sockets or dragged onto
 them while normal production and every normal control continue to work.
 The normal UI remains stationary during SHIFT; the diagnostic layer exposes a
 Memory Bus, four primary addresses, and a fifth reserved address near System Log
-only after four Memory Blocks are restored. Stage 7 and later mechanics are not started.
+only after four Memory Blocks are restored. Stage 8 and later mechanics are not started.
 
 ## Developer panel (debug builds only)
 
@@ -216,6 +221,12 @@ Focused developer-panel validation:
 ```
 godot --headless --path . --scene res://tools/ValidateDevPanel.tscn
 ```
+
+## Roadmap
+
+Stage 5: Memory Accounting Failure. Stage 6: Access Mask. Stage 7: Scheduler
+Desync. Stage 8: final idle-game buildup. `dev/topdown/TopDownPrototype.tscn`
+is development-only and not reachable through canonical progression.
 
 ## Long-term Chapter 1 endpoint (documentation only)
 

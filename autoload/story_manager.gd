@@ -29,6 +29,8 @@ const DEFAULT_FLAGS: Dictionary = {
 	&"access_mask_register_discovered": false,
 	&"write_permission_discovered": false,
 	&"access_mask_puzzle_completed": false,
+	&"scheduler_desync_started": false,
+	&"scheduler_desync_completed": false,
 }
 
 

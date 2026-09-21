@@ -253,6 +253,9 @@ func get_generator_production_multiplier(_generator_id: StringName) -> float:
 	for upgrade in _get_owned_upgrade_definitions():
 		if upgrade.effect_type == &"generator_multiplier" and upgrade.target_id == _generator_id:
 			multiplier *= upgrade.effect_value
+	var scheduler := AUTOLOAD_REGISTRY.get_autoload(get_tree(), &"scheduler_manager")
+	if scheduler != null:
+		multiplier *= scheduler.get_efficiency_multiplier(_generator_id)
 	return multiplier
 
 func get_global_production_multiplier() -> float:

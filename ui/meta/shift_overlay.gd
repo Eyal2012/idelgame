@@ -3,6 +3,7 @@ extends Control
 const AUTOLOAD_REGISTRY := preload("res://autoload/autoload_registry.gd")
 const DIAGNOSTIC_VISUAL := preload("res://ui/meta/shift_diagnostic_visual.gd")
 const ACCESS_REGISTER := preload("res://ui/meta/access_register.gd")
+const SCHEDULER_QUEUE := preload("res://ui/meta/scheduler_queue.gd")
 
 signal operator_selected()
 
@@ -11,6 +12,7 @@ var _operator_button: Button
 var _diagnostic: Control
 var _fade_tween: Tween
 var _access_register: Control
+var _scheduler_queue: Control
 
 
 func _ready() -> void:
@@ -44,6 +46,7 @@ func _ready() -> void:
 	_access_register = ACCESS_REGISTER.new()
 	_access_register.name = "AccessRegister"
 	add_child(_access_register)
+	_scheduler_queue = SCHEDULER_QUEUE.new(); _scheduler_queue.name = "SchedulerQueue"; add_child(_scheduler_queue)
 
 
 func configure(core_panel: Control) -> void:
@@ -52,6 +55,8 @@ func configure(core_panel: Control) -> void:
 		_diagnostic.configure(core_panel)
 	if _access_register != null and _access_register.has_method("configure"):
 		_access_register.configure(core_panel)
+	if _scheduler_queue != null and _scheduler_queue.has_method("configure"):
+		_scheduler_queue.configure(core_panel)
 
 
 func set_shift_active(active: bool) -> void:
@@ -75,6 +80,8 @@ func set_shift_active(active: bool) -> void:
 	_operator_button.visible = active and not _is_operator_discovered()
 	if _access_register != null and _access_register.has_method("set_shift_active"):
 		_access_register.set_shift_active(active)
+	if _scheduler_queue != null and _scheduler_queue.has_method("set_shift_active"):
+		_scheduler_queue.set_shift_active(active)
 	if active:
 		_position_operator()
 

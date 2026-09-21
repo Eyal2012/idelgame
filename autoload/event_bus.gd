@@ -101,6 +101,7 @@ signal shift_state_changed(active: bool)
 signal operator_discovered()
 signal memory_puzzle_event(event_id: StringName, bit_index: int, slot_index: int)
 signal access_mask_changed(mask: int)
+signal scheduler_queue_changed()
 
 ## Emitted when the game is reset.
 signal game_reset()

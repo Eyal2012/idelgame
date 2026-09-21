@@ -90,7 +90,7 @@ func _validate_save_migration(errors: PackedStringArray, access: Node, saves: No
 	var old_save := {"save_version": 4, "saved_at_unix": 0, "game": {}, "story": {"flags": {"memory_failure_completed": true}}, "memory_puzzle": {}}
 	var migrated: Dictionary = saves.migrate_save(old_save)
 	var old_access: Dictionary = migrated.get("access_mask", {})
-	if int(migrated.get("save_version", 0)) != 5 or bool(old_access.get("event_started", true)) or int(old_access.get("operator_access_mask", 0)) != access.READ:
+	if int(migrated.get("save_version", 0)) != 6 or bool(old_access.get("event_started", true)) or int(old_access.get("operator_access_mask", 0)) != access.READ:
 		errors.append("Q v4 migration did not create inactive READ-default access state")
 
 

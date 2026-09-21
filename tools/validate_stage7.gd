@@ -1,0 +1,26 @@
+extends Node
+const REG:=preload("res://autoload/autoload_registry.gd")
+const MAIN:=preload("res://ui/main/Main.tscn")
+func _ready()->void:
+	process_mode=Node.PROCESS_MODE_ALWAYS;await get_tree().process_frame;var errors:PackedStringArray=[]
+	var game:=REG.get_autoload(get_tree(),&"game");var story:=REG.get_autoload(get_tree(),&"story_manager");var access:=REG.get_autoload(get_tree(),&"access_mask_manager");var scheduler:=REG.get_autoload(get_tree(),&"scheduler_manager");var saves:=REG.get_autoload(get_tree(),&"save_manager");var shift:=REG.get_autoload(get_tree(),&"shift_manager")
+	if game==null or story==null or access==null or scheduler==null or saves==null:errors.append("Stage 7 autoload missing")
+	else:
+		scheduler.reset();access.reset();story.clear();if scheduler.start_event():errors.append("A began before Stage 6 completion")
+		story.debug_apply_state({"shift_state_unlocked":true,"memory_failure_completed":true});access.debug_apply_checkpoint(&"complete");scheduler.reset()
+		if not scheduler.debug_apply_checkpoint(&"ready"):errors.append("B trigger readiness failed")
+		if not scheduler.debug_apply_checkpoint(&"failure") or scheduler.is_queue_valid():errors.append("C initial queue is not invalid")
+		game.set_state({"bits":0.0,"generator_counts":{"worker":1,"terminal":1},"owned_upgrades":[]});var worker:float=game.get_generator_production(&"worker");var terminal:float=game.get_generator_production(&"terminal")
+		if not is_equal_approx(worker,1.0) or not is_equal_approx(terminal,4.5):errors.append("D/E temporary penalty did not affect Terminal only")
+		var bits:float=game.get_currency();if not is_equal_approx(bits,0.0):errors.append("F scheduler changed Bits")
+		if not scheduler.move_task_down(&"buffer_read") or not scheduler.move_task_up(&"buffer_read"):errors.append("G/H queue movement failed")
+		if scheduler.is_stage7_complete() or not scheduler.get_dependency_error().contains("OUTPUT COMMIT"):errors.append("I/J invalid queue state incorrect")
+		scheduler.move_task_up(&"worker_execute");scheduler.move_task_up(&"result_verify")
+		if not scheduler.is_stage7_complete() or not scheduler.is_queue_valid():errors.append("K completion did not require canonical queue")
+		if not is_equal_approx(game.get_generator_production(&"terminal"),6.0):errors.append("L Terminal production did not restore")
+		var saved:Dictionary=scheduler.get_save_data();scheduler.reset();scheduler.apply_save_data(saved);if not scheduler.is_stage7_complete():errors.append("M/O completed scheduler save did not persist")
+		var mid:Dictionary={"event_started":true,"event_completed":false,"execution_queue":["buffer_read","worker_execute","output_commit","result_verify"],"completion_elapsed":0.0};scheduler.apply_save_data(mid);if scheduler.get_execution_queue()[2]!=&"output_commit":errors.append("N mid-puzzle queue did not persist")
+		var old:Dictionary=saves.migrate_save({"save_version":5,"saved_at_unix":0,"game":{},"story":{},"memory_puzzle":{},"access_mask":{}});if int(old.get("save_version",0))!=6 or bool((old.get("scheduler",{}) as Dictionary).get("event_started",true)):errors.append("P v5 migration unsafe")
+		scheduler.debug_apply_checkpoint(&"failure");var main:=MAIN.instantiate();add_child(main);await get_tree().process_frame;var normal:=main.get_node("UI/NormalUI") as Control;var base:Vector2=(normal.get_node("RootMargin") as Control).position;shift.set_shift_active_for_test(true);await get_tree().process_frame;var queue:=main.get_node_or_null("UI/MetaOverlay/SchedulerQueue") as Control;if (normal.get_node("RootMargin") as Control).position!=base or queue==null or not queue.visible or queue.mouse_filter!=Control.MOUSE_FILTER_IGNORE:errors.append("Q/R SHIFT scheduler overlay regressed")
+		shift.set_shift_active_for_test(false);shift.clear_test_override();main.queue_free()
+	print("VALIDATION_RESULT:","OK" if errors.is_empty() else "ERRORS: "+", ".join(errors));get_tree().quit()

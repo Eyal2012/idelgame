@@ -79,7 +79,8 @@ func apply_checkpoint(definition: DebugCheckpointDefinition) -> bool:
 	var story := _autoload(&"story_manager")
 	var puzzle := _autoload(&"memory_puzzle")
 	var access := _autoload(&"access_mask_manager")
-	if game == null or story == null or puzzle == null or access == null:
+	var scheduler := _autoload(&"scheduler_manager")
+	if game == null or story == null or puzzle == null or access == null or scheduler == null:
 		return false
 	puzzle.debug_reset_current_puzzle()
 	var state := {"bits": definition.bits, "generator_counts": definition.generator_counts, "owned_upgrades": Array(definition.owned_upgrades)}
@@ -94,6 +95,8 @@ func apply_checkpoint(definition: DebugCheckpointDefinition) -> bool:
 		_: puzzle.reset()
 	if success:
 		success = access.debug_apply_checkpoint(definition.access_mask_state)
+	if success:
+		success = scheduler.debug_apply_checkpoint(definition.scheduler_state)
 	game.debug_refresh_ui()
 	_rebuild_content()
 	return success
@@ -336,6 +339,7 @@ func _build_ui() -> void:
 	_button("UNLOCK ALL CURRENT UI", func() -> void: story.debug_set_flag(&"first_anomaly_started", true); story.debug_set_flag(&"shift_state_unlocked", true); story.debug_set_flag(&"operator_discovered", true); game.debug_refresh_ui())
 	_button("FORCE SHIFT UNLOCK", func() -> void: story.debug_set_flag(&"shift_state_unlocked", true))
 	_button("REFRESH UI", func() -> void: game.debug_refresh_ui())
+	_button("ENTER TOP-DOWN PROTOTYPE", func() -> void: close(); get_tree().change_scene_to_file("res://dev/topdown/TopDownPrototype.tscn"))
 	_button("PAUSE WHILE OPEN: %s" % ("ON" if _pause_when_open else "OFF"), func() -> void: _pause_when_open = not _pause_when_open; get_tree().paused = _pause_when_open and is_open(); _rebuild_content())
 
 
