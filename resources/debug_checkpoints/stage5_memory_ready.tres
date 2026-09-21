@@ -1,0 +1,13 @@
+[gd_resource type="Resource" script_class="DebugCheckpointDefinition" load_steps=2 format=3]
+[ext_resource type="Script" path="res://core/debug_checkpoint_definition.gd" id="1"]
+[resource]
+script = ExtResource("1")
+id = &"stage5_memory_ready"
+display_name = "STAGE 5 // MEMORY FAILURE READY"
+stage = "STAGE 5"
+description = "All real trigger prerequisites are present; normal progression can start Memory Failure."
+bits = 100000.0
+generator_counts = {"worker": 25, "terminal": 5, "server": 1}
+owned_upgrades = PackedStringArray("input_cache", "terminal_pipeline")
+story_flags = {"first_anomaly_started": true, "shift_state_unlocked": true, "operator_discovered": true}
+memory_state = &"inactive"

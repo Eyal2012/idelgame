@@ -7,6 +7,9 @@ const SAVE_VERSION: int = 4
 const SAVE_PATH: String = "user://save.json"
 const BACKUP_PATH: String = "user://save_backup.json"
 const TEMP_PATH: String = "user://save.tmp"
+const DEV_SAVE_PATH: String = "user://dev_save.json"
+const DEV_BACKUP_PATH: String = "user://dev_save_backup.json"
+const DEV_TEMP_PATH: String = "user://dev_save.tmp"
 const AUTOSAVE_INTERVAL_SECONDS: float = 12.0
 const MAX_OFFLINE_SECONDS: int = 24 * 60 * 60
 
@@ -17,10 +20,18 @@ var _backup_path: String = BACKUP_PATH
 var _temp_path: String = TEMP_PATH
 var _autosave_elapsed: float = 0.0
 var _has_loaded_session: bool = false
+var _debug_autosave_enabled: bool = true
+var _using_dev_save: bool = false
 
 
 func _ready() -> void:
 	process_mode = Node.PROCESS_MODE_ALWAYS
+	# Opt-in only; normal debug and release launches use the player save.
+	if OS.is_debug_build() and OS.get_cmdline_user_args().has("--dev-save"):
+		_primary_path = DEV_SAVE_PATH
+		_backup_path = DEV_BACKUP_PATH
+		_temp_path = DEV_TEMP_PATH
+		_using_dev_save = true
 	call_deferred("_initial_load")
 
 
@@ -33,6 +44,8 @@ func _initial_load() -> void:
 
 
 func _process(delta: float) -> void:
+	if OS.is_debug_build() and not _debug_autosave_enabled:
+		return
 	_autosave_elapsed += delta
 	if _autosave_elapsed >= AUTOSAVE_INTERVAL_SECONDS:
 		_autosave_elapsed = 0.0
@@ -172,6 +185,7 @@ func restore_default_paths() -> void:
 	# Test sessions explicitly restore defaults after cleanup; do not let their
 	# shutdown notification create or overwrite a player save.
 	_has_loaded_session = false
+	_using_dev_save = false
 
 
 func reset_save(include_backup: bool = true) -> void:
@@ -185,6 +199,37 @@ func reset_save(include_backup: bool = true) -> void:
 	_reset_story_state()
 	var memory:=AUTOLOAD_REGISTRY.get_autoload(get_tree(),&"memory_puzzle")
 	if memory!=null:memory.reset()
+
+
+func debug_set_autosave_enabled(enabled: bool) -> bool:
+	if not OS.is_debug_build():
+		return false
+	_debug_autosave_enabled = enabled
+	_autosave_elapsed = 0.0
+	return true
+
+
+func debug_is_autosave_enabled() -> bool:
+	return _debug_autosave_enabled
+
+
+func debug_is_using_dev_save() -> bool:
+	return _using_dev_save
+
+
+func debug_force_save() -> bool:
+	return save() if OS.is_debug_build() else false
+
+
+func debug_reload_save() -> bool:
+	return load_game() if OS.is_debug_build() else false
+
+
+func debug_reset_save() -> bool:
+	if not OS.is_debug_build():
+		return false
+	reset_save()
+	return true
 
 
 func _reset_story_state() -> void:

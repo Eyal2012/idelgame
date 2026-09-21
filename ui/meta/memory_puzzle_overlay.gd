@@ -3,6 +3,7 @@ extends Control
 ## Presentation/input shell for MemoryPuzzle. It never owns puzzle progress:
 ## click placement and drag/drop both delegate to MemoryPuzzle.place_bit().
 const AUTOLOAD_REGISTRY := preload("res://autoload/autoload_registry.gd")
+const NUMBER_FORMATTER := preload("res://core/number_formatter.gd")
 
 var bits: Dictionary = {}
 var slots: Dictionary = {}
@@ -36,11 +37,11 @@ func _ready() -> void:
 	for bit_index in range(5):
 		var bit := Button.new()
 		bit.name = "bit_%d" % bit_index
-		bit.text = "BIT\n%02X\nD%02d" % [bit_index, bit_index + 1]
-		bit.tooltip_text = "Detached data cell %02X" % bit_index
+		bit.text = "MB-%02d\n0\nBITS" % [bit_index + 1]
+		bit.tooltip_text = "Detached Memory Block %02d" % [bit_index + 1]
 		bit.mouse_filter = Control.MOUSE_FILTER_STOP
 		bit.alignment = HORIZONTAL_ALIGNMENT_CENTER
-		bit.add_theme_font_size_override("font_size", 9)
+		bit.add_theme_font_size_override("font_size", 10)
 		bit.gui_input.connect(_on_bit_gui_input.bind(bit_index))
 		add_child(bit)
 		bits[bit_index] = bit
@@ -59,12 +60,18 @@ func _ready() -> void:
 	guidance.add_theme_color_override("font_color", Color("b8edf4"))
 	guidance.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	add_child(guidance)
+	get_viewport().size_changed.connect(_refresh)
+	if event_bus != null and not event_bus.is_connected("shift_state_changed", _on_shift_state_changed):
+		event_bus.shift_state_changed.connect(_on_shift_state_changed)
+	set_process(false)
 	_refresh()
 
 
 func _process(delta: float) -> void:
 	_completion_pulse = maxf(0.0, _completion_pulse - delta)
-	_refresh()
+	queue_redraw()
+	if _completion_pulse <= 0.0:
+		set_process(false)
 
 
 func _refresh() -> void:
@@ -72,17 +79,32 @@ func _refresh() -> void:
 	if puzzle == null:
 		return
 	var size_scale := _visual_scale()
+	var shift_active := _shift_active()
 	var guidance := get_node("Guidance") as Label
-	guidance.position = Vector2(size.x * 0.5 - 150.0, 82.0)
-	guidance.size = Vector2(300.0, 40.0)
-	guidance.visible = puzzle.active and puzzle.are_bits_revealed()
+	var core := get_parent().get_node_or_null("RootMargin/WorkspaceVBox/WorkspaceRow/CorePanel") as Control if get_parent() != null else null
+	if core != null:
+		var core_rect := core.get_global_rect()
+		var overlay_origin := get_global_rect().position
+		guidance.position = Vector2(core_rect.get_center().x - overlay_origin.x - 165.0, core_rect.position.y - overlay_origin.y + 62.0)
+	else:
+		guidance.position = Vector2(size.x * 0.5 - 165.0, 128.0)
+	guidance.size = Vector2(330.0, 60.0)
+	guidance.visible = puzzle.active and puzzle.are_bits_revealed() and not shift_active
 	if guidance.visible:
-		guidance.text = "HOLD [SHIFT] TO INSPECT INTERNAL ROUTES" if puzzle.selected_bit >= 0 or puzzle.get_restored_count() > 0 else "5 DATA CELLS DETACHED\nCLICK OR DRAG A DATA CELL"
+		if puzzle.get_restored_count() == 4:
+			guidance.text = "MEMORY MAP: 4 / 5 BLOCKS RESTORED\nUNRESOLVED: 1 MEMORY BLOCK • %s BITS\nHOLD [SHIFT] TO FIND THE RESERVED ADDRESS" % NUMBER_FORMATTER.format(puzzle.get_unresolved_value(), 2)
+		elif puzzle.selected_bit >= 0 or puzzle.get_restored_count() > 0:
+			guidance.text = "MEMORY BLOCK SELECTED\nHOLD [SHIFT] TO INSPECT INTERNAL ROUTES"
+		else:
+			guidance.text = "MEMORY ACCOUNTING FAILURE\n5 MEMORY BLOCKS DETACHED\nUNADDRESSABLE: %s BITS" % NUMBER_FORMATTER.format(puzzle.get_escrow_amount(), 2)
 	for bit_index in range(5):
 		var bit := bits[bit_index] as Button
-		var bit_size := Vector2(50.0, 50.0) * size_scale
+		var bit_size := Vector2(66.0, 58.0) * size_scale
 		bit.custom_minimum_size = bit_size
 		bit.size = bit_size
+		var block_value: float = puzzle.get_block_value(bit_index)
+		bit.text = "MB-%02d\n%s\nBITS" % [bit_index + 1, NUMBER_FORMATTER.format(block_value, 2)]
+		bit.tooltip_text = "MEMORY BLOCK %02d\n%s BITS UNADDRESSABLE" % [bit_index + 1, NUMBER_FORMATTER.format(block_value, 2)]
 		_safe_positions[bit_index] = _spawn_position(bit_index, bit_size)
 		if bit_index != _drag_bit:
 			bit.position = _safe_positions[bit_index]
@@ -94,7 +116,6 @@ func _refresh() -> void:
 		bit.scale = Vector2.ONE * (1.10 if bit_index == _drag_bit else 1.0)
 		bit.add_theme_stylebox_override("normal", _bit_dragging if bit_index == _drag_bit else _bit_selected if selected else _bit_normal)
 		bit.add_theme_stylebox_override("hover", _bit_dragging if bit_index == _drag_bit else _bit_selected if selected else _bit_hover)
-	var shift_active := _shift_active()
 	for slot_index in range(5):
 		var socket := slots[slot_index] as Button
 		socket.custom_minimum_size = Vector2(84.0, 44.0) * size_scale
@@ -142,6 +163,7 @@ func _input(event: InputEvent) -> void:
 		if event.relative.length_squared() > 0.0:
 			_drag_moved = true
 			bit.position = _clamp_position(get_local_mouse_position() - _drag_offset, bit.size)
+			_refresh()
 		get_viewport().set_input_as_handled()
 	elif event is InputEventMouseButton and event.button_index == MOUSE_BUTTON_LEFT and not event.pressed:
 		_finish_drag(_drag_bit)
@@ -218,10 +240,16 @@ func _try_drop(bit_index: int, pointer: Vector2) -> bool:
 func _on_puzzle_event(event_id: StringName, _bit_index: int, _slot_index: int) -> void:
 	if event_id == &"memory_failure_completed":
 		_completion_pulse = 0.45
+		set_process(true)
+	_refresh()
+
+
+func _on_shift_state_changed(_active: bool) -> void:
+	_refresh()
 
 
 func _spawn_position(bit_index: int, bit_size: Vector2) -> Vector2:
-	# Keep the detached cells on the Core perimeter. This deliberately reserves
+	# Keep the detached Memory Blocks on the Core perimeter. This deliberately reserves
 	# sidebar navigation, Process BUY/INSTALL controls, and System Log text.
 	var core := get_parent().get_node_or_null("RootMargin/WorkspaceVBox/WorkspaceRow/CorePanel") as Control if get_parent() != null else null
 	if core != null:

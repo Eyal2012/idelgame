@@ -89,6 +89,32 @@ func clear() -> void:
 	current_chapter = StringName()
 
 
+## Debug-only entry points keep developer tools from depending on private flags.
+func debug_set_flag(flag_id: StringName, value: Variant) -> bool:
+	if not OS.is_debug_build() or not DEFAULT_FLAGS.has(flag_id):
+		return false
+	set_flag(flag_id, value)
+	return true
+
+
+func debug_apply_state(flags: Dictionary, chapter_id: StringName = &"") -> bool:
+	if not OS.is_debug_build():
+		return false
+	clear()
+	for raw_id in flags:
+		debug_set_flag(StringName(raw_id), flags[raw_id])
+	if not chapter_id.is_empty():
+		set_chapter(chapter_id)
+	return true
+
+
+func debug_reset_story() -> bool:
+	if not OS.is_debug_build():
+		return false
+	clear()
+	return true
+
+
 func _reset_defaults() -> void:
 	for flag_id in DEFAULT_FLAGS:
 		if not _flags.has(flag_id):

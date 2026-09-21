@@ -19,6 +19,13 @@ var _core_feedback_tween: Tween
 var _anomaly_tween: Tween
 var _displayed_generator_ids: Dictionary = {}
 var _unlock_message_pending: bool = false
+const PASSIVE_DISPLAY_INTERVAL := 1.0 / 15.0
+const SYSTEM_LOG_HISTORY_LIMIT := 60
+var _passive_display_elapsed := 0.0
+var _passive_display_dirty := false
+var _system_log_history: Array[String] = []
+var economy_refresh_count: int = 0
+var passive_refresh_count: int = 0
 
 
 func _ready() -> void:
@@ -45,6 +52,19 @@ func _ready() -> void:
 	_refresh()
 	get_viewport().size_changed.connect(_apply_responsive_layout)
 	call_deferred("_apply_responsive_layout")
+
+
+func _process(delta: float) -> void:
+	if not _passive_display_dirty:
+		return
+	_passive_display_elapsed += delta
+	if _passive_display_elapsed < PASSIVE_DISPLAY_INTERVAL:
+		return
+	_passive_display_elapsed = 0.0
+	_passive_display_dirty = false
+	passive_refresh_count += 1
+	_refresh()
+	_refresh_passive_children()
 
 
 func _connect_signals() -> void:
@@ -190,10 +210,11 @@ func _refresh() -> void:
 	var game := AUTOLOAD_REGISTRY.get_autoload(get_tree(), &"game")
 	if game == null:
 		return
-	bits_label.text = "%s\nBITS" % NUMBER_FORMATTER.format(game.get_currency())
-	per_second_label.text = "+%s / SEC" % NUMBER_FORMATTER.format(game.get_total_production_per_second(), 2)
+	economy_refresh_count += 1
+	_set_label_text(bits_label, "%s\nBITS" % NUMBER_FORMATTER.format(game.get_currency()))
+	_set_label_text(per_second_label, "+%s / SEC" % NUMBER_FORMATTER.format(game.get_total_production_per_second(), 2))
 	var manual_power: float = game.get_manual_generation_amount()
-	manual_power_label.text = "+%s %s / CLICK" % [NUMBER_FORMATTER.format(manual_power, 2), "BIT" if is_equal_approx(manual_power, 1.0) else "BITS"]
+	_set_label_text(manual_power_label, "+%s %s / CLICK" % [NUMBER_FORMATTER.format(manual_power, 2), "BIT" if is_equal_approx(manual_power, 1.0) else "BITS"])
 	var modifier_details: Array = game.get_manual_power_modifier_details()
 	if modifier_details.is_empty():
 		get_node("RootMargin/WorkspaceVBox/WorkspaceRow/CorePanel/CoreVBox/CoreStatusLabel").text = "CORE READY // INPUT ACCEPTED"
@@ -209,7 +230,8 @@ func _on_generate_pressed() -> void:
 	var game := AUTOLOAD_REGISTRY.get_autoload(get_tree(), &"game")
 	if game != null:
 		game.generate_manual()
-		system_log_label.text = "> Manual computation accepted\n> Bit stream incremented\n> Awaiting input..."
+		_append_system_log("Manual computation accepted\nBit stream incremented\nAwaiting input...")
+		_refresh()
 		_play_core_feedback()
 
 
@@ -220,7 +242,7 @@ func _on_generator_acquired(generator_id: StringName) -> void:
 	var content_db := AUTOLOAD_REGISTRY.get_autoload(get_tree(), &"content_db")
 	var definition: GeneratorDefinition = content_db.get_generator(generator_id) as GeneratorDefinition if content_db != null else null
 	if definition != null:
-		system_log_label.text = "> %s ACQUIRED\n> COMPUTE OUTPUT INCREASED\n> Awaiting operator input..." % definition.display_name
+		_append_system_log("%s ACQUIRED\nCOMPUTE OUTPUT INCREASED\nAwaiting operator input..." % definition.display_name)
 
 
 func _play_core_feedback() -> void:
@@ -240,7 +262,7 @@ func _play_capacity_feedback() -> void:
 
 
 func _on_currency_changed(_currency_id: StringName, _old: float, _new: float) -> void:
-	_refresh()
+	_passive_display_dirty = true
 
 
 func _on_generator_bought(_generator_id: StringName, _new_count: int) -> void:
@@ -249,22 +271,25 @@ func _on_generator_bought(_generator_id: StringName, _new_count: int) -> void:
 	if not newly_displayed.is_empty():
 		var unlocked_definition: GeneratorDefinition = newly_displayed[0]
 		_unlock_message_pending = true
-		system_log_label.text = "> NEW PROCESS DISCOVERED\n> %s ONLINE\n> Awaiting operator input..." % unlocked_definition.display_name
-	_refresh()
+		_append_system_log("NEW PROCESS DISCOVERED\n%s ONLINE\nAwaiting operator input..." % unlocked_definition.display_name)
+		_refresh()
+		_refresh_passive_children()
 
 
 func _on_upgrade_bought(_upgrade_id: StringName) -> void:
 	_refresh()
+	_refresh_passive_children()
 
 
 func _on_load_completed(_success: bool) -> void:
 	_sync_generator_rows(false)
 	_refresh()
+	_refresh_passive_children()
 	_refresh_shift_indicator()
 
 
 func _on_system_log_message(message: String) -> void:
-	system_log_label.text = "> " + message.replace("\n", "\n> ")
+	_append_system_log(message)
 
 
 func _on_anomaly_visual_requested() -> void:
@@ -305,7 +330,27 @@ func _on_operator_selected() -> void:
 	var overlay := get_node_or_null("../MetaOverlay")
 	if overlay != null and overlay.has_method("set_operator_discovered"):
 		overlay.set_operator_discovered()
-	_on_system_log_message("UNREGISTERED PROCESS SELECTED\nSCANNING...\nTYPE: INPUT SOURCE\nORIGIN: OUTSIDE SIMULATION\nASSIGNING TEMPORARY IDENTIFIER...\nOPERATOR")
+	_append_system_log("UNREGISTERED PROCESS SELECTED\nSCANNING...\nTYPE: INPUT SOURCE\nORIGIN: OUTSIDE SIMULATION\nASSIGNING TEMPORARY IDENTIFIER...\nOPERATOR")
 	var event_bus := AUTOLOAD_REGISTRY.get_autoload(get_tree(), &"event_bus")
 	if event_bus != null:
 		event_bus.operator_discovered.emit()
+
+
+func _refresh_passive_children() -> void:
+	for row in process_rows.get_children():
+		if row.has_method("refresh_passive_display"):
+			row.refresh_passive_display()
+	if upgrade_store != null and upgrade_store.has_method("refresh_passive_affordability"):
+		upgrade_store.refresh_passive_affordability()
+
+
+func _set_label_text(label: Label, value: String) -> void:
+	if label.text != value:
+		label.text = value
+
+
+func _append_system_log(message: String) -> void:
+	_system_log_history.append(message)
+	if _system_log_history.size() > SYSTEM_LOG_HISTORY_LIMIT:
+		_system_log_history.pop_front()
+	_set_label_text(system_log_label, "> " + message.replace("\n", "\n> "))

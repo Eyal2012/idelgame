@@ -8,6 +8,7 @@ signal generator_acquired(generator_id: StringName)
 var generator_id: StringName = &""
 var _definition: GeneratorDefinition
 var _feedback_tween: Tween
+var passive_refresh_count: int = 0
 
 @onready var accent_label: Label = $Margin/VBox/TopRow/AccentLabel
 @onready var title_label: Label = $Margin/VBox/TopRow/TitleLabel
@@ -56,8 +57,6 @@ func _connect_signals() -> void:
 	var event_bus := AUTOLOAD_REGISTRY.get_autoload(get_tree(), &"event_bus")
 	if event_bus == null:
 		return
-	if not event_bus.is_connected("currency_changed", _on_currency_changed):
-		event_bus.currency_changed.connect(_on_currency_changed)
 	if not event_bus.is_connected("generator_bought", _on_generator_bought):
 		event_bus.generator_bought.connect(_on_generator_bought)
 	if not event_bus.is_connected("generator_bulk_bought", _on_generator_bulk_bought):
@@ -72,13 +71,15 @@ func _refresh() -> void:
 	var game := AUTOLOAD_REGISTRY.get_autoload(get_tree(), &"game")
 	if game == null:
 		return
-	owned_value_label.text = str(game.get_generator_count(generator_id))
-	each_value_label.text = "NEXT\n+%s /s" % NUMBER_FORMATTER.format(game.get_next_generator_production(generator_id), 2)
-	total_value_label.text = "TOTAL\n+%s /s" % NUMBER_FORMATTER.format(game.get_generator_production(generator_id), 2)
-	cost_value_label.text = "NEXT COST\n%s BITS" % NUMBER_FORMATTER.format(game.get_generator_bulk_cost(generator_id, 1))
+	_set_text_if_changed(owned_value_label, str(game.get_generator_count(generator_id)))
+	_set_text_if_changed(each_value_label, "NEXT\n+%s /s" % NUMBER_FORMATTER.format(game.get_next_generator_production(generator_id), 2))
+	_set_text_if_changed(total_value_label, "TOTAL\n+%s /s" % NUMBER_FORMATTER.format(game.get_generator_production(generator_id), 2))
+	_set_text_if_changed(cost_value_label, "NEXT COST\n%s BITS" % NUMBER_FORMATTER.format(game.get_generator_bulk_cost(generator_id, 1)))
 	acquire_button.disabled = not game.can_buy_generator(generator_id)
 	buy_10_button.disabled = not game.can_afford(game.get_generator_bulk_cost(generator_id, 10))
-	max_button.disabled = game.get_max_affordable_generator_count(generator_id) < 1
+	# Exact MAX is calculated only when clicked. The visual merely needs to know
+	# whether at least one Process can be bought.
+	max_button.disabled = not game.can_buy_generator(generator_id)
 
 
 func _on_acquire_pressed() -> void:
@@ -104,7 +105,8 @@ func _buy_amount(amount: int) -> void:
 		generator_acquired.emit(generator_id)
 
 
-func _on_currency_changed(_currency_id: StringName, _old: float, _new: float) -> void:
+func refresh_passive_display() -> void:
+	passive_refresh_count += 1
 	_refresh()
 
 
@@ -181,3 +183,8 @@ func _apply_style() -> void:
 		button.add_theme_stylebox_override("hover", hover)
 		button.add_theme_stylebox_override("disabled", disabled)
 		button.add_theme_color_override("font_disabled_color", Color("66718d"))
+
+
+func _set_text_if_changed(label: Label, value: String) -> void:
+	if label.text != value:
+		label.text = value

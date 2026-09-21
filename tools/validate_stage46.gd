@@ -2,7 +2,7 @@ extends Node
 const AUTOLOAD_REGISTRY := preload("res://autoload/autoload_registry.gd")
 const PRIMARY := "user://stage46_save.json"
 const BACKUP := "user://stage46_backup.json"
-const NORMAL_UI_SCENE := preload("res://ui/main/NormalUI.tscn")
+const MAIN_SCENE := preload("res://ui/main/Main.tscn")
 
 func _ready() -> void:
 	await get_tree().process_frame
@@ -70,25 +70,145 @@ func _validate_manual_power(errors: PackedStringArray, game: Node, saves: Node) 
 	game.reset_save_data()
 
 func _validate_ui(errors: PackedStringArray, game: Node) -> void:
-	game.apply_save_data({"bits":1000000.0,"generator_counts":{"worker":3}})
-	var host:=Control.new();host.size=Vector2(1280,720);add_child(host)
-	var ui:=NORMAL_UI_SCENE.instantiate() as Control;host.add_child(ui)
+	var story := AUTOLOAD_REGISTRY.get_autoload(get_tree(), &"story_manager")
+	var puzzle := AUTOLOAD_REGISTRY.get_autoload(get_tree(), &"memory_puzzle")
+	var shift := AUTOLOAD_REGISTRY.get_autoload(get_tree(), &"shift_manager")
+	if story == null or puzzle == null or shift == null:
+		errors.append("P Stage 5 autoload missing")
+		return
+	puzzle.reset()
+	story.clear()
+	shift.set_shift_active_for_test(false)
+	var main := MAIN_SCENE.instantiate()
+	get_tree().root.add_child(main)
 	await get_tree().process_frame
-	var manual_power:=ui.get_node_or_null("RootMargin/WorkspaceVBox/WorkspaceRow/CorePanel/CoreVBox/CoreFrame/CoreButton/CoreReadout/ManualPowerLabel") as Label
-	var core_status:=ui.get_node_or_null("RootMargin/WorkspaceVBox/WorkspaceRow/CorePanel/CoreVBox/CoreStatusLabel") as Label
-	var worker_link:=ui.get_node_or_null("RootMargin/WorkspaceVBox/WorkspaceRow/CorePanel/CoreVBox/CoreFrame/CoreButton/CoreReadout/WorkerLinkLabel") as Label
-	if manual_power==null or not manual_power.text.contains("1 BIT / CLICK"): errors.append("Q manual base readout")
+	await get_tree().process_frame
+	var ui := main.get_node("UI/NormalUI") as Control
+	var store: Variant = ui.upgrade_store
+	var manual_power := ui.get_node_or_null("RootMargin/WorkspaceVBox/WorkspaceRow/CorePanel/CoreVBox/CoreFrame/CoreButton/CoreReadout/ManualPowerLabel") as Label
+	var worker_link := ui.get_node_or_null("RootMargin/WorkspaceVBox/WorkspaceRow/CorePanel/CoreVBox/CoreFrame/CoreButton/CoreReadout/WorkerLinkLabel") as Label
+	var meta_overlay := main.get_node("UI/MetaOverlay") as Control
+	var puzzle_overlay := ui.get_node("MemoryPuzzleOverlay") as Control
+	if manual_power == null or not manual_power.text.contains("1 BIT / CLICK"):
+		errors.append("Q manual base readout")
+	# P-R: a real pointer press/release selects distinct available modules and
+	# populates the inspector rather than merely checking that nodes exist.
+	game.apply_save_data({"bits":1000000.0,"generator_counts":{"worker":5,"terminal":5,"server":1}})
+	store._refresh()
+	await get_tree().process_frame
+	var first := _available_tile(store, &"input_cache")
+	var second := _available_tile(store, &"worker_threading")
+	if first == null or second == null:
+		errors.append("P available module tiles missing")
 	else:
-		var before_install:float=game.get_currency()
-		ui.upgrade_store._select(&"input_cache");ui.upgrade_store._install_selected()
-		if not game.is_upgrade_owned(&"input_cache") or abs(game.get_currency()-(before_install-60.0))>0.001: errors.append("Q manual install")
-		elif not manual_power.text.contains("1.26 BITS / CLICK") or worker_link==null or not worker_link.visible or not worker_link.text.contains("1.26"): errors.append("Q manual installed readout")
-		elif game.buy_generators(&"worker",7)!=7 or not manual_power.text.contains("2.16 BITS / CLICK"): errors.append("Q manual buy ten refresh")
-		elif not game.buy_generator(&"worker") or not manual_power.text.contains("2.33 BITS / CLICK"): errors.append("Q manual immediate refresh")
-	var button:=ui.get_node_or_null("RootMargin/WorkspaceVBox/WorkspaceRow/SidebarPanel/SidebarVBox/UpgradesNavLabel") as Button
-	if button==null: errors.append("P upgrade navigation missing")
+		await _click_control(first)
+		if store._selected != &"input_cache" or not store._inspector.visible or not store._detail.text.contains("WORKER INPUT LINK"):
+			errors.append("P real click did not select first available module")
+		await _click_control(second)
+		if store._selected != &"worker_threading" or not store._detail.text.contains("WORKER THREADING"):
+			errors.append("Q real click did not change selected module inspector")
+	# S-T: affordable modules install, while unaffordable modules remain inspectable.
+	game.apply_save_data({"bits":100.0,"generator_counts":{"worker":5,"terminal":5,"server":1}})
+	store._refresh()
+	await get_tree().process_frame
+	var affordable := _available_tile(store, &"input_cache")
+	var unaffordable := _available_tile(store, &"worker_threading")
+	if affordable == null or unaffordable == null:
+		errors.append("S affordability fixture modules missing")
 	else:
-		button.emit_signal("pressed");await get_tree().process_frame
-		if ui.upgrade_store==null or not ui.upgrade_store.visible: errors.append("P store did not open")
-		elif ui.upgrade_store._grid==null or ui.upgrade_store._grid.get_child_count()<1: errors.append("P available grid missing")
-	host.queue_free()
+		await _click_control(affordable)
+		if store._install.disabled or not store._detail.text.contains("60 BITS"):
+			errors.append("S affordable module inspector/install state is incorrect")
+		await _click_control(unaffordable)
+		if not store._install.disabled or not store._detail.text.contains("150 BITS"):
+			errors.append("T unaffordable module was not inspectable/disabled")
+		await _click_control(_available_tile(store, &"input_cache"))
+		var before_install: float = game.get_currency()
+		store._install.emit_signal("pressed")
+		var after_install: float = game.get_currency()
+		await get_tree().process_frame
+		if not game.is_upgrade_owned(&"input_cache") or abs(after_install - (before_install - 60.0)) > 0.001:
+			errors.append("U install did not deduct exact Bits or grant ownership")
+		elif _available_tile(store, &"input_cache") != null or _installed_tile(store, &"input_cache") == null:
+			errors.append("U installed module did not move between grids")
+		else:
+			var installed := _installed_tile(store, &"input_cache")
+			await _click_control(installed)
+			if store._selected != &"input_cache" or store._install.visible or not store._detail.text.contains("WORKER INPUT LINK"):
+				errors.append("U installed module inspector state is incorrect")
+			elif not manual_power.text.contains("1.47 BITS / CLICK") or worker_link == null or not worker_link.visible or not worker_link.text.contains("1.47"):
+				errors.append("U Worker Input Link formula/readout changed")
+	# V-W: full-rect decorative overlays remain input-transparent while inactive,
+	# during an active Memory Puzzle, during SHIFT, and after completion.
+	if meta_overlay.mouse_filter != Control.MOUSE_FILTER_IGNORE or puzzle_overlay.mouse_filter != Control.MOUSE_FILTER_IGNORE:
+		errors.append("V overlay root intercepts Module Bay input")
+	story.set_flag(&"operator_discovered", true)
+	story.set_flag(&"shift_state_unlocked", true)
+	game.apply_save_data({"bits":1000000.0,"generator_counts":{"worker":5,"terminal":5,"server":1},"owned_upgrades":["input_cache","terminal_pipeline"]})
+	store._refresh()
+	puzzle.reset()
+	if not puzzle.try_trigger():
+		errors.append("V active puzzle fixture failed")
+	else:
+		puzzle.advance_for_test(1.0)
+		await get_tree().process_frame
+		var active_tile := _available_tile(store, &"worker_threading")
+		if active_tile == null:
+			errors.append("V active puzzle module missing")
+		else:
+			await _click_control(active_tile)
+			if store._selected != &"worker_threading":
+				errors.append("V active puzzle overlay blocked module selection")
+		shift.set_shift_active_for_test(true)
+		await get_tree().process_frame
+		var shift_tile := _available_tile(store, &"vector_scheduler")
+		if shift_tile == null:
+			errors.append("W SHIFT module missing")
+		else:
+			await _click_control(shift_tile)
+			if store._selected != &"vector_scheduler":
+				errors.append("W SHIFT overlay blocked module selection")
+		for bit_index in range(4):
+			puzzle.place_bit(bit_index, bit_index)
+		puzzle.place_bit(4, 4)
+		await get_tree().process_frame
+		shift.set_shift_active_for_test(false)
+		await get_tree().process_frame
+		var completed_tile := _available_tile(store, &"worker_threading")
+		if completed_tile != null:
+			await _click_control(completed_tile)
+			if store._selected != &"worker_threading":
+				errors.append("W completed puzzle state blocked module selection")
+	shift.set_shift_active_for_test(false)
+	shift.clear_test_override()
+	puzzle.reset()
+	main.queue_free()
+	await get_tree().process_frame
+
+
+func _available_tile(store: Variant, upgrade_id: StringName) -> Button:
+	for child in store._grid.get_children():
+		var tile := child as Button
+		if tile != null and StringName(tile.get_meta(&"upgrade_id", &"")) == upgrade_id:
+			return tile
+	return null
+
+
+func _installed_tile(store: Variant, upgrade_id: StringName) -> Button:
+	for child in store._installed_grid.get_children():
+		var tile := child as Button
+		if tile != null and StringName(tile.get_meta(&"upgrade_id", &"")) == upgrade_id:
+			return tile
+	return null
+
+
+## Godot's headless dummy renderer does not route synthetic pointer events to
+## Controls, so invoke the real Button.pressed route that physical clicks emit.
+func _click_control(control: Control) -> void:
+	if control == null or not control.visible:
+		return
+	var button := control as Button
+	if button == null:
+		return
+	button.emit_signal("pressed")
+	await get_tree().process_frame

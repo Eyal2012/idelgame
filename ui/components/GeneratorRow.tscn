@@ -3,7 +3,7 @@
 [ext_resource type="Script" path="res://ui/components/generator_row.gd" id="1_row"]
 
 [node name="GeneratorRow" type="PanelContainer"]
-custom_minimum_size = Vector2(0, 98)
+custom_minimum_size = Vector2(0, 96)
 layout_mode = 2
 size_flags_horizontal = 3
 script = ExtResource("1_row")
@@ -11,13 +11,13 @@ script = ExtResource("1_row")
 [node name="Margin" type="MarginContainer" parent="."]
 layout_mode = 2
 theme_override_constants/margin_left = 10
-theme_override_constants/margin_top = 6
+theme_override_constants/margin_top = 3
 theme_override_constants/margin_right = 10
-theme_override_constants/margin_bottom = 6
+theme_override_constants/margin_bottom = 3
 
 [node name="VBox" type="VBoxContainer" parent="Margin"]
 layout_mode = 2
-theme_override_constants/separation = 2
+theme_override_constants/separation = 1
 
 [node name="TopRow" type="HBoxContainer" parent="Margin/VBox"]
 layout_mode = 2
@@ -26,25 +26,25 @@ theme_override_constants/separation = 6
 [node name="AccentLabel" type="Label" parent="Margin/VBox/TopRow"]
 custom_minimum_size = Vector2(10, 0)
 layout_mode = 2
-theme_override_text_font_size = 14
+theme_override_font_sizes/font_size = 14
 text = "■"
 
 [node name="TitleLabel" type="Label" parent="Margin/VBox/TopRow"]
 layout_mode = 2
 size_flags_horizontal = 3
-theme_override_text_font_size = 15
+theme_override_font_sizes/font_size = 15
 text = "GENERATOR"
 clip_text = true
 
 [node name="OwnedKeyLabel" type="Label" parent="Margin/VBox/TopRow"]
 layout_mode = 2
-theme_override_text_font_size = 10
+theme_override_font_sizes/font_size = 10
 text = "OWNED"
 
 [node name="OwnedValueLabel" type="Label" parent="Margin/VBox/TopRow"]
 custom_minimum_size = Vector2(22, 0)
 layout_mode = 2
-theme_override_text_font_size = 14
+theme_override_font_sizes/font_size = 14
 horizontal_alignment = 2
 text = "0"
 
@@ -55,13 +55,13 @@ theme_override_constants/separation = 10
 [node name="EachValueLabel" type="Label" parent="Margin/VBox/StatsRow"]
 layout_mode = 2
 size_flags_horizontal = 3
-theme_override_text_font_size = 10
+theme_override_font_sizes/font_size = 11
 text = "NEXT\n+0 /s"
 
 [node name="TotalValueLabel" type="Label" parent="Margin/VBox/StatsRow"]
 layout_mode = 2
 size_flags_horizontal = 3
-theme_override_text_font_size = 10
+theme_override_font_sizes/font_size = 11
 horizontal_alignment = 2
 text = "TOTAL\n+0 /s"
 
@@ -72,23 +72,23 @@ theme_override_constants/separation = 8
 [node name="CostValueLabel" type="Label" parent="Margin/VBox/PurchaseRow"]
 layout_mode = 2
 size_flags_horizontal = 3
-theme_override_text_font_size = 10
+theme_override_font_sizes/font_size = 11
 text = "NEXT COST\n0 BITS"
 
 [node name="AcquireButton" type="Button" parent="Margin/VBox/PurchaseRow"]
 custom_minimum_size = Vector2(48, 0)
 layout_mode = 2
-theme_override_font_size = 11
+theme_override_font_sizes/font_size = 11
 text = "BUY 1"
 
 [node name="Buy10Button" type="Button" parent="Margin/VBox/PurchaseRow"]
 custom_minimum_size = Vector2(52, 0)
 layout_mode = 2
-theme_override_font_size = 11
+theme_override_font_sizes/font_size = 11
 text = "BUY 10"
 
 [node name="MaxButton" type="Button" parent="Margin/VBox/PurchaseRow"]
 custom_minimum_size = Vector2(42, 0)
 layout_mode = 2
-theme_override_font_size = 11
+theme_override_font_sizes/font_size = 11
 text = "MAX"

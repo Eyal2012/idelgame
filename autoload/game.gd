@@ -256,7 +256,95 @@ func update_production(delta: float) -> void:
 
 
 func debug_add_currency(amount: float) -> void:
-	add_currency(amount)
+	if _debug_access_allowed() and _is_valid_debug_amount(amount):
+		add_currency(amount)
+
+
+## Development-only mutation surface. The Dev Panel uses these methods instead
+## of reaching into persistent dictionaries, so regular gameplay math remains
+## the one authoritative implementation.
+func debug_set_bits(amount: float) -> bool:
+	if not _debug_access_allowed() or not _is_valid_debug_amount(amount):
+		return false
+	var old := bits
+	bits = amount
+	_emit_currency_changed(old, bits)
+	return true
+
+
+func debug_set_generator_count(generator_id: StringName, count: int) -> bool:
+	if not _debug_access_allowed() or _get_generator_definition(generator_id) == null or count < 0:
+		return false
+	generator_counts[generator_id] = count
+	_refresh_generator_unlocks()
+	_emit_generator_bought(generator_id, count)
+	return true
+
+
+func debug_set_upgrade_owned(upgrade_id: StringName, owned: bool) -> bool:
+	if not _debug_access_allowed() or _get_upgrade_definition(upgrade_id) == null:
+		return false
+	if owned:
+		owned_upgrades[upgrade_id] = true
+	else:
+		owned_upgrades.erase(upgrade_id)
+	var event_bus := AUTOLOAD_REGISTRY.get_autoload(get_tree(), &"event_bus")
+	if event_bus != null:
+		event_bus.upgrade_bought.emit(upgrade_id)
+	_emit_currency_changed(bits, bits)
+	return true
+
+
+func debug_set_all_upgrades(owned: bool) -> bool:
+	if not _debug_access_allowed():
+		return false
+	var content_db := _get_content_db()
+	if content_db == null:
+		return false
+	for definition in content_db.get_upgrades():
+		if owned:
+			owned_upgrades[definition.id] = true
+		else:
+			owned_upgrades.erase(definition.id)
+		var event_bus := AUTOLOAD_REGISTRY.get_autoload(get_tree(), &"event_bus")
+		if event_bus != null:
+			event_bus.upgrade_bought.emit(definition.id)
+	_emit_currency_changed(bits, bits)
+	return true
+
+
+func debug_apply_state(state: Dictionary) -> bool:
+	if not _debug_access_allowed():
+		return false
+	apply_save_data(state)
+	var content_db := _get_content_db()
+	if content_db != null:
+		for definition in content_db.get_generators():
+			_emit_generator_bought(definition.id, get_generator_count(definition.id))
+		for definition in content_db.get_upgrades():
+			if is_upgrade_owned(definition.id):
+				var event_bus := AUTOLOAD_REGISTRY.get_autoload(get_tree(), &"event_bus")
+				if event_bus != null:
+					event_bus.upgrade_bought.emit(definition.id)
+	return true
+
+
+func debug_refresh_ui() -> void:
+	if not _debug_access_allowed():
+		return
+	_emit_currency_changed(bits, bits)
+	var content_db := _get_content_db()
+	if content_db != null:
+		for definition in content_db.get_generators():
+			_emit_generator_bought(definition.id, get_generator_count(definition.id))
+
+
+func _debug_access_allowed() -> bool:
+	return OS.is_debug_build()
+
+
+func _is_valid_debug_amount(amount: float) -> bool:
+	return not is_nan(amount) and not is_inf(amount) and amount >= 0.0
 
 
 ## Transitional compatibility helpers retained for Stage 1 callers/tests.

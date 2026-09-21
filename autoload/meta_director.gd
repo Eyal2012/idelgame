@@ -67,6 +67,12 @@ func start_first_anomaly() -> bool:
 	return true
 
 
+## Debug-only route for the developer panel. This still uses the normal event
+## sequence instead of making UI code reproduce anomaly timing or rewards.
+func debug_force_first_anomaly() -> bool:
+	return start_first_anomaly() if OS.is_debug_build() else false
+
+
 func is_first_anomaly_active() -> bool:
 	return _first_anomaly_active
 

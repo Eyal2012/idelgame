@@ -59,7 +59,10 @@ func set_shift_active(active: bool) -> void:
 		# Release must restore normal input/visibility in the same frame.
 		visible = false
 		modulate = Color.WHITE
-	if _diagnostic != null: _diagnostic.visible = active
+	if _diagnostic != null:
+		_diagnostic.visible = active
+		if active and _diagnostic.has_method("request_redraw"):
+			_diagnostic.request_redraw()
 	if _operator_button == null:
 		return
 	_operator_button.visible = active and not _is_operator_discovered()

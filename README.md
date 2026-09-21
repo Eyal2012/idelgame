@@ -11,13 +11,39 @@ Godot 4.7 (engine features: `4.7`, `Forward Plus`).
 
 ## Current stage
 
-**Stage 5 - Memory Bus Recovery.** After discovering OPERATOR, owning two
-modules, and bringing a Server online, a five-Bit accounting mismatch can occur.
-Five detached physical data cells can be selected/clicked into sockets or dragged
-onto them while normal production and every normal control continue to work.
+**Stage 5.2 - Scaled Memory Blocks.** After discovering OPERATOR, owning two
+modules, and bringing a Server online, a five-percent accounting mismatch can
+occur. Five detached physical Memory Blocks represent the temporarily
+unaddressable Bits; each can be selected/clicked into sockets or dragged onto
+them while normal production and every normal control continue to work.
 The normal UI remains stationary during SHIFT; the diagnostic layer exposes a
 Memory Bus, four primary addresses, and a fifth reserved address near System Log
-only after four cells are restored. Stage 6 and later mechanics are not started.
+only after four Memory Blocks are restored. Stage 6 and later mechanics are not started.
+
+## Developer panel (debug builds only)
+
+Press `TAB` to toggle the compact **BIT//SHIFT // DEV PANEL** in a Godot debug
+build. The panel consumes TAB before text controls or normal focus traversal can
+use it, ignores key-repeat toggles, and its floating panel blocks clicks only
+where it physically overlaps the game. Release builds do not instantiate this
+UI, and the debug mutation APIs reject release calls.
+
+It offers live economy, data-driven Process and upgrade controls, current-state
+readouts, Story/SHIFT/OPERATOR tools, authoritative Memory Puzzle controls,
+save controls, autosave testing, and UI refresh commands. It intentionally does
+not pause production by default. Normal launches modify the current player save.
+For isolated testing, launch a debug build with `-- --dev-save`; this selects
+the compatible `user://dev_save.json` target rather than the player save.
+`RESET SAVE` requires a second confirmation click.
+
+Checkpoints are `DebugCheckpointDefinition` resources in
+`res://resources/debug_checkpoints/`. The panel discovers that directory at
+runtime, so future content registers a checkpoint by adding a resource with
+generic Game state, Story flags, and Memory Puzzle state—never another
+stage-specific branch in the panel. Current entries cover Fresh, Stage 4's
+anomaly/SHIFT/OPERATOR states, and Stage 5 from ready through completion.
+`Game`, `StoryManager`, `MemoryPuzzle`, and `SaveManager` expose debug-only
+methods for those actions; normal game systems never depend on the panel.
 
 ## Process economy
 
@@ -47,20 +73,22 @@ or Story/OPERATOR flags.
 
 ## Memory Bus Recovery
 
-`MemoryPuzzle` is the sole authority for the fixed five-Bit escrow, stable
-`bit_0` through `bit_4` identities, slot mapping, completion, and sanitization.
-The trigger debits exactly five Bits once; completion refunds exactly that escrow
-once. A save made mid-puzzle retains active state, occupied slots, the remaining
-escaped cell ids, fifth-address phase, and hint progress. Malformed puzzle data
-is normalized by discarding duplicate/unknown mappings, clamping escrow to the
-fixed amount, and never creating a large currency reward.
+`MemoryPuzzle` is the sole authority for the percentage escrow, stable `bit_0`
+through `bit_4` identities, slot mapping, completion, and sanitization. A new
+failure escrows `min(floor(current Bits), max(10, floor(current Bits * 0.05)))`
+once, then splits that exact integer across five Memory Blocks with quotient and
+remainder allocation. Completion refunds the stored escrow once. A v4 save made
+mid-puzzle retains its stored escrow verbatim, so older `escrow: 5` saves remain
+five-Bit puzzles rather than being reinterpreted. Malformed display-cache data is
+ignored; slots and stored escrow remain authoritative.
 
 `MemoryPuzzleOverlay` is presentation and input only. It provides compact cyan /
-violet data-cell controls, click-selection with socket-click fallback, and drag /
-drop. Both paths call the same `MemoryPuzzle.place_bit()` authority. Invalid
-drops tween back to a responsive safe position; releasing SHIFT during a drag
-only hides the socket targets, so the eventual release returns safely. The
-overlay is deliberately non-modal: it has no full-window input blocker.
+violet `MB-01` through `MB-05` controls with their authoritative stored value,
+click-selection with socket-click fallback, and drag / drop. Both paths call the
+same `MemoryPuzzle.place_bit()` authority. Invalid drops tween back to a
+responsive safe position; releasing SHIFT during a drag only hides the socket
+targets, so the eventual release returns safely. The overlay is deliberately
+non-modal: it has no full-window input blocker.
 
 During SHIFT, restrained traces connect the Core-side diagnostic origin to the
 four Memory Bus slots. At four of five, `ADDRESS 04 // RESERVED` appears above
@@ -176,11 +204,19 @@ godot --headless --path . --editor --quit
 
 The main scene is `res://ui/main/Main.tscn`.
 
-## What should be built next
+Focused developer-panel validation:
 
-Future systems may use computing concepts such as permissions, scheduling,
-buffers, binary state, and UI compilation. The long-term normal progression
-goal remains the signed 32-bit maximum `2,147,483,647`, where a later overflow
-chapter may occur; it is deliberately not implemented yet.
+```
+godot --headless --path . --scene res://tools/ValidateDevPanel.tscn
+```
+
+## Long-term Chapter 1 endpoint (documentation only)
+
+Normal progression ultimately targets `2,147,483,647 Bits`, the signed 32-bit
+integer limit. A later INTEGER OVERFLOW event will break down BIT//SHIFT's
+interface, transition through an animated cutscene, and enter an original
+top-down internal world with exploration, environmental lore, RPG/puzzle
+systems, dodge/combat encounters, and a final large boss. None of that is
+implemented in Stage 5.2.
 
 All of it must follow the architecture rules in `docs/ARCHITECTURE.md`.

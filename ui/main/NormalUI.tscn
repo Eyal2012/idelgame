@@ -61,10 +61,10 @@ layout_mode = 2
 text = "●  SYSTEM ONLINE"
 vertical_alignment = 1
 
-[node name="ShiftIndicator" type="Label" parent="RootMargin/WorkspaceVBox/HeaderPanel/HeaderRow"]
+[node name="ShiftIndicator" type="Label" parent="RootMargin/WorkspaceVBox/HeaderPanel/HeaderRow" unique_id=1636032065]
+visible = false
 layout_mode = 2
 text = "[SHIFT] INSPECT"
-visible = false
 vertical_alignment = 1
 
 [node name="BuildLabel" type="Label" parent="RootMargin/WorkspaceVBox/HeaderPanel/HeaderRow" unique_id=1132238049]
@@ -152,7 +152,7 @@ layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
-offset_left = 28.0
+offset_left = 29.0
 offset_top = 25.0
 offset_right = -20.0
 offset_bottom = -23.0
@@ -171,16 +171,17 @@ horizontal_alignment = 1
 [node name="BitsLabel" type="Label" parent="RootMargin/WorkspaceVBox/WorkspaceRow/CorePanel/CoreVBox/CoreFrame/CoreButton/CoreReadout" unique_id=1243343124]
 layout_mode = 2
 theme_override_font_sizes/font_size = 28
-text = "0\nBITS"
+text = "0
+BITS"
 horizontal_alignment = 1
 
-[node name="PerSecondInsideLabel" type="Label" parent="RootMargin/WorkspaceVBox/WorkspaceRow/CorePanel/CoreVBox/CoreFrame/CoreButton/CoreReadout"]
+[node name="PerSecondInsideLabel" type="Label" parent="RootMargin/WorkspaceVBox/WorkspaceRow/CorePanel/CoreVBox/CoreFrame/CoreButton/CoreReadout" unique_id=947735906]
 layout_mode = 2
 theme_override_font_sizes/font_size = 13
 text = "+0 / SEC"
 horizontal_alignment = 1
 
-[node name="ManualPowerLabel" type="Label" parent="RootMargin/WorkspaceVBox/WorkspaceRow/CorePanel/CoreVBox/CoreFrame/CoreButton/CoreReadout"]
+[node name="ManualPowerLabel" type="Label" parent="RootMargin/WorkspaceVBox/WorkspaceRow/CorePanel/CoreVBox/CoreFrame/CoreButton/CoreReadout" unique_id=1993771117]
 layout_mode = 2
 theme_override_font_sizes/font_size = 11
 text = "+1 / CLICK"
@@ -192,18 +193,17 @@ theme_override_font_sizes/font_size = 11
 text = "CLICK TO COMPUTE"
 horizontal_alignment = 1
 
-[node name="WorkerLinkLabel" type="Label" parent="RootMargin/WorkspaceVBox/WorkspaceRow/CorePanel/CoreVBox/CoreFrame/CoreButton/CoreReadout"]
+[node name="WorkerLinkLabel" type="Label" parent="RootMargin/WorkspaceVBox/WorkspaceRow/CorePanel/CoreVBox/CoreFrame/CoreButton/CoreReadout" unique_id=147651476]
+visible = false
 layout_mode = 2
 theme_override_font_sizes/font_size = 10
-text = ""
 horizontal_alignment = 1
-visible = false
 
 [node name="PerSecondLabel" type="Label" parent="RootMargin/WorkspaceVBox/WorkspaceRow/CorePanel/CoreVBox" unique_id=1119598367]
+visible = false
 layout_mode = 2
 text = "+0 BITS / SEC"
 horizontal_alignment = 1
-visible = false
 
 [node name="CoreStatusLabel" type="Label" parent="RootMargin/WorkspaceVBox/WorkspaceRow/CorePanel/CoreVBox" unique_id=2040459855]
 layout_mode = 2

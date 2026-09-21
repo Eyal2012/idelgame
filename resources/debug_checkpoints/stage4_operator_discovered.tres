@@ -1,0 +1,13 @@
+[gd_resource type="Resource" script_class="DebugCheckpointDefinition" load_steps=2 format=3]
+[ext_resource type="Script" path="res://core/debug_checkpoint_definition.gd" id="1"]
+[resource]
+script = ExtResource("1")
+id = &"stage4_operator_discovered"
+display_name = "STAGE 4 // OPERATOR DISCOVERED"
+stage = "STAGE 4"
+description = "SHIFT and Operator discovery are available."
+bits = 10000.0
+generator_counts = {"worker": 10, "terminal": 4, "server": 1}
+owned_upgrades = PackedStringArray("input_cache", "terminal_pipeline")
+story_flags = {"first_anomaly_started": true, "shift_state_unlocked": true, "operator_discovered": true}
+memory_state = &"inactive"

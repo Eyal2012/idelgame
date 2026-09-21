@@ -1,5 +1,7 @@
 extends Node
 
+const DEV_PANEL := preload("res://ui/debug/dev_panel.gd")
+
 ## Main
 ##
 ## Root scene for the game.
@@ -30,6 +32,10 @@ func _ready() -> void:
 	_ensure_layer(meta_overlay)
 	_ensure_layer(dialogue_overlay)
 	_ensure_layer(debug_overlay)
+	if OS.is_debug_build() and debug_overlay.get_node_or_null("DevPanel") == null:
+		var panel := DEV_PANEL.new()
+		panel.name = "DevPanel"
+		debug_overlay.add_child(panel)
 
 
 ## Make sure a node is visible and process-enabled.
@@ -39,4 +45,5 @@ func _ensure_layer(node: Node) -> void:
 	if node is Control:
 		node.visible = true
 		node.process_mode = Node.PROCESS_MODE_ALWAYS
+		node.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	node.process_mode = Node.PROCESS_MODE_ALWAYS

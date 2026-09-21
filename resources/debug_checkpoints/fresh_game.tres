@@ -1,0 +1,11 @@
+[gd_resource type="Resource" script_class="DebugCheckpointDefinition" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://core/debug_checkpoint_definition.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = &"fresh_game"
+display_name = "FRESH GAME"
+stage = "FRESH"
+description = "Reset all current gameplay state."
+memory_state = &"inactive"

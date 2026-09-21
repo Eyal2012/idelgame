@@ -1,0 +1,11 @@
+[gd_resource type="Resource" script_class="DebugCheckpointDefinition" load_steps=2 format=3]
+[ext_resource type="Script" path="res://core/debug_checkpoint_definition.gd" id="1"]
+[resource]
+script = ExtResource("1")
+id = &"stage4_anomaly_ready"
+display_name = "STAGE 4 // FIRST ANOMALY READY"
+stage = "STAGE 4"
+description = "Terminal and Bits requirements are met; the normal anomaly may begin."
+bits = 100.0
+generator_counts = {"worker": 10, "terminal": 1}
+memory_state = &"inactive"

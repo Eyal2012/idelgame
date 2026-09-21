@@ -75,10 +75,35 @@ func _validate_compact_layout(errors: PackedStringArray, ui: Control) -> void:
 		return
 	if rows.get_child_count() != IDS.size():
 		errors.append("All five rows should be visible after progression")
+	var row_metrics: PackedStringArray = []
+	var max_row_height := 0.0
 	for row in rows.get_children():
-		if row is Control and row.custom_minimum_size.y > 110.0:
-			errors.append("Generator row is not compact: %s" % row.name)
+		if row is Control:
+			max_row_height = maxf(max_row_height, row.size.y)
+			var section_metrics: PackedStringArray = []
+			var row_vbox := row.get_node_or_null("Margin/VBox")
+			if row_vbox != null:
+				for section in row_vbox.get_children():
+					if section is Control:
+						section_metrics.append("%s %.1f/min %.1f" % [section.name, section.size.y, section.get_combined_minimum_size().y])
+			row_metrics.append("%s=%.1f(min %.1f; %s)" % [row.name, row.size.y, row.custom_minimum_size.y, "; ".join(section_metrics)])
+			if row.size.y > 100.0:
+				errors.append("Generator row is not compact: %s height=%.1f [%s]" % [row.name, row.size.y, "; ".join(section_metrics)])
+			for button_name in ["AcquireButton", "Buy10Button", "MaxButton"]:
+				var button := row.get_node_or_null("Margin/VBox/PurchaseRow/" + button_name) as Button
+				if button == null or not row.get_global_rect().encloses(button.get_global_rect()):
+					errors.append("Generator purchase control is clipped: %s/%s" % [row.name, button_name])
 	# Stage 4.6 reserves the top of this same right panel for the compact module
 	# bay; the remaining Process list must still expose several rows, not all five.
 	if rows.size.y - scroll.size.y > 450.0:
-		errors.append("Process scrolling is excessive beside the module bay at 1280x720 rows=%.1f scroll=%.1f" % [rows.size.y, scroll.size.y])
+		errors.append("Process scrolling is excessive beside the module bay at 1280x720 rows=%.1f scroll=%.1f [%s]" % [rows.size.y, scroll.size.y, ", ".join(row_metrics)])
+	var visible_rows := scroll.size.y / max_row_height if max_row_height > 0.0 else 0.0
+	if visible_rows < 2.75:
+		errors.append("Fewer than three Process rows are practically visible at 1280x720: %.2f" % visible_rows)
+	print("PROCESS_LAYOUT: row_height=%.1f scroll_height=%.1f visible_rows=%.2f" % [max_row_height, scroll.size.y, visible_rows])
+	var process_vbox := scroll.get_parent()
+	var panel_metrics: PackedStringArray = []
+	for child in process_vbox.get_children():
+		if child is Control:
+			panel_metrics.append("%s=%.1f/min %.1f" % [child.name, child.size.y, child.get_combined_minimum_size().y])
+	print("PROCESS_PANEL: %s" % "; ".join(panel_metrics))

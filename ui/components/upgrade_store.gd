@@ -10,10 +10,13 @@ var _install: Button
 var _inspector: PanelContainer
 var _selected: StringName = &""
 var _module_size: int = 48
+var _module_style_cache: Dictionary = {}
+var structural_refresh_count: int = 0
+var affordability_refresh_count: int = 0
 
 
 func _ready() -> void:
-	custom_minimum_size = Vector2(0, 142)
+	custom_minimum_size = Vector2(0, 104)
 	var style := StyleBoxFlat.new()
 	style.bg_color = Color("10172b")
 	style.border_color = Color("2b405e")
@@ -24,11 +27,11 @@ func _ready() -> void:
 	style.set_corner_radius_all(5)
 	style.content_margin_left = 9
 	style.content_margin_right = 9
-	style.content_margin_top = 7
-	style.content_margin_bottom = 7
+	style.content_margin_top = 4
+	style.content_margin_bottom = 4
 	add_theme_stylebox_override("panel", style)
 	var box := VBoxContainer.new()
-	box.add_theme_constant_override("separation", 5)
+	box.add_theme_constant_override("separation", 2)
 	add_child(box)
 	var title := Label.new()
 	title.text = "UPGRADES  •  MODULE BAY"
@@ -82,7 +85,10 @@ func _ready() -> void:
 	var event_bus := AUTOLOAD_REGISTRY.get_autoload(get_tree(), &"event_bus")
 	if event_bus != null:
 		event_bus.upgrade_bought.connect(func(_id: StringName) -> void: _refresh())
-		event_bus.currency_changed.connect(func(_a: StringName, _b: float, _c: float) -> void: _refresh())
+		# Passive production emits currency_changed continuously. Recreating Buttons
+		# here can replace a tile between pointer press and release, so only update
+		# affordability/selection styling on a currency change.
+		event_bus.currency_changed.connect(func(_a: StringName, _b: float, _c: float) -> void: _refresh_affordability())
 		event_bus.generator_bought.connect(func(_id: StringName, _count: int) -> void: _refresh())
 	_refresh()
 
@@ -93,29 +99,51 @@ func _make_module(definition: UpgradeDefinition, installed: bool) -> Button:
 	tile.tooltip_text = "%s\n%s" % [definition.display_name, definition.description]
 	tile.text = _tile_label(definition, installed)
 	tile.add_theme_font_size_override("font_size", 8 if installed else 9)
+	tile.alignment = HORIZONTAL_ALIGNMENT_CENTER
+	tile.set_meta(&"upgrade_id", definition.id)
+	tile.set_meta(&"installed", installed)
 	var game := AUTOLOAD_REGISTRY.get_autoload(get_tree(), &"game")
 	var affordable: bool = game != null and game.can_buy_upgrade(definition.id)
+	_apply_module_style(tile, affordable, installed, definition.id == _selected)
+	tile.pressed.connect(_on_module_pressed.bind(definition.id))
+	return tile
+
+
+func _apply_module_style(tile: Button, affordable: bool, installed: bool, selected: bool) -> void:
+	var key := "%s:%s:%s" % [affordable, installed, selected]
+	var styles: Dictionary = _module_style_cache.get(key, {})
+	if styles.is_empty():
+		styles = _make_module_styles(affordable, installed, selected)
+		_module_style_cache[key] = styles
+	tile.add_theme_stylebox_override("normal", styles["normal"])
+	tile.add_theme_stylebox_override("hover", styles["hover"])
+	tile.modulate = Color(0.62, 0.69, 0.80, 1.0) if installed else Color.WHITE
+
+
+func _make_module_styles(affordable: bool, installed: bool, selected: bool) -> Dictionary:
 	var normal := StyleBoxFlat.new()
-	normal.bg_color = Color("152039") if not installed else Color("111827")
-	normal.border_color = Color("5dcbda") if affordable else Color("34445d")
-	normal.border_width_left = 1
-	normal.border_width_top = 1
-	normal.border_width_right = 1
-	normal.border_width_bottom = 1
+	normal.bg_color = Color("29204a") if selected else Color("152039") if not installed else Color("111827")
+	normal.border_color = Color("c7a1ff") if selected else Color("5dcbda") if affordable else Color("34445d")
+	var border_width := 2 if selected else 1
+	normal.border_width_left = border_width
+	normal.border_width_top = border_width
+	normal.border_width_right = border_width
+	normal.border_width_bottom = border_width
 	normal.set_corner_radius_all(3)
 	var hover := normal.duplicate()
 	hover.bg_color = Color("26395a")
-	hover.border_color = Color("b28cff")
-	tile.add_theme_stylebox_override("normal", normal)
-	tile.add_theme_stylebox_override("hover", hover)
-	tile.modulate = Color(0.62, 0.69, 0.80, 1.0) if installed else Color.WHITE
-	tile.pressed.connect(func() -> void: _select(definition.id))
-	return tile
+	hover.border_color = Color("e0c5ff") if selected else Color("b28cff")
+	return {"normal": normal, "hover": hover}
+
+
+func _on_module_pressed(upgrade_id: StringName) -> void:
+	_select(upgrade_id)
 
 
 func _refresh() -> void:
 	if _grid == null:
 		return
+	structural_refresh_count += 1
 	for child in _grid.get_children():
 		child.queue_free()
 	for child in _installed_grid.get_children():
@@ -140,7 +168,7 @@ func _refresh() -> void:
 		_detail.text = "Select an available module to inspect it."
 		_install.disabled = true
 		_inspector.visible = false
-		custom_minimum_size.y = 142
+		custom_minimum_size.y = 104
 	else:
 		_select(_selected)
 
@@ -154,10 +182,42 @@ func _select(upgrade_id: StringName) -> void:
 		return
 	_inspector.visible = true
 	custom_minimum_size.y = 234
+	_refresh_affordability()
 	var owned: bool = game.is_upgrade_owned(upgrade_id)
 	_detail.text = "%s\n%s\n\nCURRENT\n%s\n\nCOST\n%s BITS" % [definition.display_name, definition.description, _current_effect_text(definition, game), NUMBER_FORMATTER.format(definition.cost)]
 	_install.visible = not owned
 	_install.disabled = owned or not game.can_buy_upgrade(upgrade_id)
+
+
+func _refresh_affordability() -> void:
+	if _grid == null:
+		return
+	affordability_refresh_count += 1
+	var game := AUTOLOAD_REGISTRY.get_autoload(get_tree(), &"game")
+	if game == null:
+		return
+	for child in _grid.get_children():
+		var tile := child as Button
+		if tile == null:
+			continue
+		var upgrade_id := StringName(tile.get_meta(&"upgrade_id", &""))
+		if upgrade_id.is_empty():
+			continue
+		_apply_module_style(tile, game.can_buy_upgrade(upgrade_id), false, upgrade_id == _selected)
+	for child in _installed_grid.get_children():
+		var tile := child as Button
+		if tile == null:
+			continue
+		var upgrade_id := StringName(tile.get_meta(&"upgrade_id", &""))
+		if upgrade_id.is_empty():
+			continue
+		_apply_module_style(tile, false, true, upgrade_id == _selected)
+	if not _selected.is_empty():
+		_install.disabled = game.is_upgrade_owned(_selected) or not game.can_buy_upgrade(_selected)
+
+
+func refresh_passive_affordability() -> void:
+	_refresh_affordability()
 
 
 func _current_effect_text(definition: UpgradeDefinition, game: Node) -> String:
@@ -179,15 +239,20 @@ func _install_selected() -> void:
 
 
 func set_responsive_layout(width: int, _height: int) -> void:
-	_module_size = 44 if width < 1500 else 52 if width < 2200 else 60
-	_grid.columns = 4 if width < 1500 else 6 if width < 2200 else 8
+	_module_size = 39 if width < 1500 else 52 if width < 2200 else 60
+	_grid.columns = 8 if width < 1500 else 6 if width < 2200 else 8
+	_grid.add_theme_constant_override("h_separation", 4 if width < 1500 else 5)
 	_refresh()
 
 
 func _tile_label(definition: UpgradeDefinition, installed: bool) -> String:
 	var words := definition.display_name.split(" ", false)
 	if installed:
-		return words[0].substr(0, 4)
+		return _compact_word(words[0], 4)
 	if words.size() < 2:
-		return definition.display_name.substr(0, 8)
-	return "%s\n%s" % [words[0].substr(0, 7), words[words.size() - 1].substr(0, 7)]
+		return _compact_word(definition.display_name, 4)
+	return "%s\n%s" % [_compact_word(words[0], 4), _compact_word(words[words.size() - 1], 4)]
+
+
+func _compact_word(value: String, maximum_length: int) -> String:
+	return value.to_upper().substr(0, maximum_length)

@@ -203,22 +203,64 @@ v2 -> v3 defaults it to an empty array while retaining all existing state.
 
 ## 30. MemoryPuzzle authority and physical interaction
 
-`MemoryPuzzle` owns the Stage 5 accounting event: fixed escrow, active/completed
-state, stable Bit ids, slot mapping, hints, intro/completion sequencing, and
-save normalization. UI must never mutate `restored`, `slots`, or Bits directly.
-Click-to-place and drag/drop both reach the same `place_bit(bit_id, slot_id)`
-method. A slot mapping is authoritative over UI state and must remain one bit to
-one slot.
+`MemoryPuzzle` owns the Stage 5 accounting event: percentage escrow,
+active/completed state, stable legacy `bit_0` through `bit_4` ids, slot mapping,
+hints, intro/completion sequencing, deterministic five-block value allocation,
+and save normalization. UI must never mutate `restored`, `slots`, or Bits
+directly. Click-to-place and drag/drop both reach the same
+`place_bit(bit_id, slot_id)` method. A slot mapping is authoritative over UI
+state and must remain one Memory Block to one slot.
 
 `MemoryPuzzleOverlay` is a responsive, non-modal presentation shell. It may
-animate detached cells back to safe positions, draw diagnostic traces, and show
+animate detached Memory Blocks back to safe positions, draw diagnostic traces, and show
 socket states, but it does not own progression. While SHIFT is active it exposes
 four primary Memory Bus addresses; it exposes the fifth reserved address only at
-four restored cells. Normal UI layout is never translated for this diagnostic
+four restored Memory Blocks. Normal UI layout is never translated for this diagnostic
 state, and invisible puzzle controls must not intercept normal gameplay input.
 
-SaveManager persists the puzzle through its v4 `memory_puzzle` block. Load-time
-sanitization discards unknown or duplicate ids, prevents escrow outside the
-fixed five-Bit amount, resolves all-five mappings as completed without a new
-reward, and prevents completed state from retaining escrow. Mid-puzzle hints
-persist enough timing state to avoid immediate replay spam.
+SaveManager persists the puzzle through its v4 `memory_puzzle` block. No schema
+change is needed for scaled blocks: their values are deterministically derived
+from stored escrow by `MemoryPuzzle`. Load-time sanitization discards unknown or
+duplicate ids, preserves a valid stored active escrow (including older five-Bit
+saves), resolves all-five mappings as completed without a new reward, and
+prevents completed state from retaining escrow. Mid-puzzle hints persist enough
+timing state to avoid immediate replay spam.
+
+## 31. Chapter 1 endpoint (documentation only)
+
+The signed 32-bit maximum, `2,147,483,647 Bits`, is the planned Chapter 1
+endpoint. A future INTEGER OVERFLOW event may transition BIT//SHIFT from its
+fake idle interface into an original top-down internal world with exploration,
+environmental storytelling, RPG/puzzle systems, dodge/combat encounters, and a
+final boss. This is future design direction only; it does not authorize an
+overflow implementation, Stage 6 systems, or post-overflow gameplay.
+
+## 32. Developer tooling is a debug-only client
+
+`DevPanel` is instantiated by `Main` only when `OS.is_debug_build()` is true.
+It listens for `TAB` in `_input`, suppresses echoed/repeated presses, and marks
+the key handled before focused `LineEdit` controls can insert/traverse it.
+Release builds have no DevPanel node and its system debug APIs reject calls.
+The panel may observe systems and invoke explicit debug APIs, but no gameplay
+system may require it to exist.
+
+`Game.debug_set_bits`, generic generator/upgrade debug setters,
+`StoryManager.debug_*`, `MemoryPuzzle.debug_*`, and `SaveManager.debug_*` are
+the narrow mutation surface. They preserve normal production, ownership,
+escrow, save, and EventBus update routes rather than duplicating that logic in
+UI. SaveManager's development autosave toggle is non-persistent and defaults
+to normal autosave behavior. Debug launches may opt in to a compatible isolated
+save target with `-- --dev-save`; otherwise developer cheats affect the active
+player save and the panel must state that clearly.
+
+## 33. Data-driven debug checkpoints
+
+`DebugCheckpointDefinition` resources in `resources/debug_checkpoints/` contain
+an id, display/stage metadata, generic Game state, Story flags, and Memory
+state/progress. `DebugCheckpointCatalog` scans and sorts the directory; the UI
+does not contain checkpoint-id conditionals. To add a future stage, add a
+validated resource with all prerequisite state needed for a coherent checkpoint.
+Checkpoint application resets an active puzzle safely, applies Game and Story
+through their debug APIs, then builds Memory Puzzle progress through its normal
+escrow and completion authority. Future checkpoints must not introduce Stage 6
+or later gameplay merely to support a test jump.

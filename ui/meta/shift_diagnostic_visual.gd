@@ -8,7 +8,7 @@ func configure(panel: Control) -> void:
 	queue_redraw()
 
 
-func _process(_delta: float) -> void:
+func request_redraw() -> void:
 	queue_redraw()
 
 
