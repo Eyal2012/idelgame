@@ -3,13 +3,20 @@
 An expandable 2D idle game with fourth-wall-breaking/meta mechanics
 inspired by the idea of "There Is No Game", but NOT a horror game.
 
-This is **Stage 5: Memory Bus Recovery**.
+This is **Stage 6: Access Mask**.
 
 ## Godot version
 
 Godot 4.7 (engine features: `4.7`, `Forward Plus`).
 
 ## Current stage
+
+**Stage 6 - Access Mask.** Stage 5.2's scaled Memory Blocks remain intact. After
+Stage 5 completion and a normal-play breathing period, a security audit starts
+with the fictional READ-only operator mask `0001`. New module installations are
+then denied without spending Bits until SHIFT exposes the compact Access Register
+and the player shifts the active bit left to `0010` (WRITE). Stage 7, INTEGER
+OVERFLOW, and the later top-down internal world remain documentation-only.
 
 **Stage 5.2 - Scaled Memory Blocks.** After discovering OPERATOR, owning two
 modules, and bringing a Server online, a five-percent accounting mismatch can
@@ -18,7 +25,7 @@ unaddressable Bits; each can be selected/clicked into sockets or dragged onto
 them while normal production and every normal control continue to work.
 The normal UI remains stationary during SHIFT; the diagnostic layer exposes a
 Memory Bus, four primary addresses, and a fifth reserved address near System Log
-only after four Memory Blocks are restored. Stage 6 and later mechanics are not started.
+only after four Memory Blocks are restored. Stage 7 and later mechanics are not started.
 
 ## Developer panel (debug builds only)
 

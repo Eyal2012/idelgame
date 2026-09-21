@@ -78,7 +78,8 @@ func apply_checkpoint(definition: DebugCheckpointDefinition) -> bool:
 	var game := _autoload(&"game")
 	var story := _autoload(&"story_manager")
 	var puzzle := _autoload(&"memory_puzzle")
-	if game == null or story == null or puzzle == null:
+	var access := _autoload(&"access_mask_manager")
+	if game == null or story == null or puzzle == null or access == null:
 		return false
 	puzzle.debug_reset_current_puzzle()
 	var state := {"bits": definition.bits, "generator_counts": definition.generator_counts, "owned_upgrades": Array(definition.owned_upgrades)}
@@ -91,6 +92,8 @@ func apply_checkpoint(definition: DebugCheckpointDefinition) -> bool:
 		&"active": success = puzzle.debug_set_progress(definition.memory_progress)
 		&"complete": success = puzzle.debug_complete()
 		_: puzzle.reset()
+	if success:
+		success = access.debug_apply_checkpoint(definition.access_mask_state)
 	game.debug_refresh_ui()
 	_rebuild_content()
 	return success
@@ -294,7 +297,10 @@ func _build_story() -> void:
 	_button("DISCOVER OPERATOR", func() -> void: story.debug_set_flag(&"operator_discovered", true))
 	_button("RESET OPERATOR DISCOVERY", func() -> void: story.debug_set_flag(&"operator_discovered", false))
 	var meta := _autoload(&"meta_director")
+	var access := _autoload(&"access_mask_manager")
 	_button("FORCE FIRST ANOMALY", func() -> void: meta.debug_force_first_anomaly())
+	_button("ACCESS MASK: 0001", func() -> void: access.debug_set_mask(access.READ) if access != null else null)
+	_button("ACCESS MASK: 0010", func() -> void: access.debug_set_mask(access.WRITE) if access != null else null)
 
 
 func _build_puzzles() -> void:

@@ -3,7 +3,7 @@ extends Node
 const AUTOLOAD_REGISTRY := preload("res://autoload/autoload_registry.gd")
 
 ## Versioned, JSON persistence for runtime gameplay state.
-const SAVE_VERSION: int = 4
+const SAVE_VERSION: int = 5
 const SAVE_PATH: String = "user://save.json"
 const BACKUP_PATH: String = "user://save_backup.json"
 const TEMP_PATH: String = "user://save.tmp"
@@ -62,12 +62,14 @@ func build_save_data() -> Dictionary:
 	var game := _get_game()
 	var story := AUTOLOAD_REGISTRY.get_autoload(get_tree(), &"story_manager")
 	var memory := AUTOLOAD_REGISTRY.get_autoload(get_tree(), &"memory_puzzle")
+	var access := AUTOLOAD_REGISTRY.get_autoload(get_tree(), &"access_mask_manager")
 	return {
 		"save_version": SAVE_VERSION,
 		"saved_at_unix": int(Time.get_unix_time_from_system()),
 		"game": game.get_save_data() if game != null else {"bits": 0.0, "generator_counts": {}},
 		"story": story.get_save_data() if story != null else {"flags": {}},
 		"memory_puzzle": memory.get_save_data() if memory != null else {},
+		"access_mask": access.get_save_data() if access != null else {},
 	}
 
 
@@ -108,6 +110,8 @@ func load_game() -> bool:
 		story.apply_save_data(normalized.get("story", {}))
 	var memory := AUTOLOAD_REGISTRY.get_autoload(get_tree(), &"memory_puzzle")
 	if memory != null: memory.apply_save_data(normalized.get("memory_puzzle", {}))
+	var access := AUTOLOAD_REGISTRY.get_autoload(get_tree(), &"access_mask_manager")
+	if access != null: access.apply_save_data(normalized.get("access_mask", {}))
 	_apply_offline_progress(game, int(normalized.get("saved_at_unix", 0)))
 	_has_loaded_session = true
 	_emit_load_completed(true)
@@ -128,6 +132,8 @@ func migrate_save(data: Dictionary) -> Dictionary:
 				migrated = _migrate_v2_to_v3(migrated)
 			3:
 				migrated = _migrate_v3_to_v4(migrated)
+			4:
+				migrated = _migrate_v4_to_v5(migrated)
 			_:
 				break
 		version = _sanitize_version(migrated.get("save_version", SAVE_VERSION))
@@ -170,6 +176,12 @@ func _migrate_v2_to_v3(data: Dictionary) -> Dictionary:
 func _migrate_v3_to_v4(data: Dictionary) -> Dictionary:
 	var result:=data.duplicate(true);result["memory_puzzle"]={"active":false,"completed":false,"escrow":0,"restored":[false,false,false,false,false],"slots":[-1,-1,-1,-1,-1],"hint_level":0};result["save_version"]=4;return result
 
+func _migrate_v4_to_v5(data: Dictionary) -> Dictionary:
+	var result := data.duplicate(true)
+	result["access_mask"] = {"event_started": false, "operator_access_mask": 1, "register_discovered": false, "write_permission_discovered": false, "puzzle_completed": false, "completion_elapsed": 0.0}
+	result["save_version"] = 5
+	return result
+
 
 ## Validator injection: never point tests at the player's default files.
 func set_test_paths(primary_path: String, backup_path: String, temp_path: String = "") -> void:
@@ -199,6 +211,8 @@ func reset_save(include_backup: bool = true) -> void:
 	_reset_story_state()
 	var memory:=AUTOLOAD_REGISTRY.get_autoload(get_tree(),&"memory_puzzle")
 	if memory!=null:memory.reset()
+	var access:=AUTOLOAD_REGISTRY.get_autoload(get_tree(),&"access_mask_manager")
+	if access!=null:access.reset()
 
 
 func debug_set_autosave_enabled(enabled: bool) -> bool:

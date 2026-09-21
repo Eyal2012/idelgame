@@ -57,6 +57,8 @@ func _acquire_and_validate(errors: PackedStringArray, ui: Control, game: Node, g
 		errors.append("Acquire button is missing for %s" % generator_id)
 		return
 	game.debug_add_currency(game.get_generator_cost(generator_id))
+	# Currency presentation is intentionally coalesced at 15 Hz.
+	await get_tree().create_timer(0.08).timeout
 	if button.disabled:
 		errors.append("Acquire did not enable for funded %s" % generator_id)
 		return

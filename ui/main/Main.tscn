@@ -38,7 +38,9 @@ script = ExtResource("3_shift_overlay")
 [node name="DialogueOverlay" type="Control" parent="UI"]
 layout_mode = 3
 anchors_preset = 0
+mouse_filter = 2
 
 [node name="DebugOverlay" type="Control" parent="UI"]
 layout_mode = 3
 anchors_preset = 0
+mouse_filter = 2

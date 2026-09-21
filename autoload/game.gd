@@ -97,11 +97,34 @@ func is_upgrade_unlocked(upgrade_id: StringName) -> bool:
 	return upgrade.prerequisite_upgrade_id.is_empty() or is_upgrade_owned(upgrade.prerequisite_upgrade_id)
 func can_buy_upgrade(upgrade_id: StringName) -> bool:
 	var upgrade := _get_upgrade_definition(upgrade_id)
-	return upgrade != null and is_upgrade_unlocked(upgrade_id) and can_afford(upgrade.cost)
+	return upgrade != null and is_upgrade_unlocked(upgrade_id) and can_afford(upgrade.cost) and can_install_upgrade(upgrade_id)
+
+
+func can_install_upgrade(upgrade_id: StringName) -> bool:
+	if _get_upgrade_definition(upgrade_id) == null:
+		return false
+	var access := AUTOLOAD_REGISTRY.get_autoload(get_tree(), &"access_mask_manager")
+	return access == null or access.can_install_new_upgrades()
+
+
+func get_upgrade_install_denial_reason(upgrade_id: StringName) -> String:
+	if _get_upgrade_definition(upgrade_id) == null:
+		return ""
+	var access := AUTOLOAD_REGISTRY.get_autoload(get_tree(), &"access_mask_manager")
+	return access.get_install_denial_reason() if access != null and not access.can_install_new_upgrades() else ""
+
+
 func buy_upgrade(upgrade_id: StringName) -> bool:
 	var upgrade := _get_upgrade_definition(upgrade_id)
-	if upgrade == null or not can_buy_upgrade(upgrade_id) or not spend_currency(upgrade.cost): return false
+	if upgrade == null or not is_upgrade_unlocked(upgrade_id) or not can_afford(upgrade.cost): return false
+	if not can_install_upgrade(upgrade_id):
+		var access := AUTOLOAD_REGISTRY.get_autoload(get_tree(), &"access_mask_manager")
+		if access != null: access.notify_install_denied()
+		return false
+	if not spend_currency(upgrade.cost): return false
 	owned_upgrades[upgrade_id] = true
+	var access := AUTOLOAD_REGISTRY.get_autoload(get_tree(), &"access_mask_manager")
+	if access != null: access.notify_upgrade_installed()
 	var event_bus := AUTOLOAD_REGISTRY.get_autoload(get_tree(), &"event_bus")
 	if event_bus != null: event_bus.upgrade_bought.emit(upgrade_id)
 	return true

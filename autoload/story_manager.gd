@@ -25,6 +25,10 @@ const DEFAULT_FLAGS: Dictionary = {
 	&"memory_failure_started": false,
 	&"memory_failure_completed": false,
 	&"operator_write_detected": false,
+	&"access_mask_event_started": false,
+	&"access_mask_register_discovered": false,
+	&"write_permission_discovered": false,
+	&"access_mask_puzzle_completed": false,
 }
 
 

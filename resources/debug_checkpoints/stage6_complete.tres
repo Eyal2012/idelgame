@@ -1,0 +1,14 @@
+[gd_resource type="Resource" script_class="DebugCheckpointDefinition" load_steps=2 format=3]
+[ext_resource type="Script" path="res://core/debug_checkpoint_definition.gd" id="1"]
+[resource]
+script = ExtResource("1")
+id = &"stage6_complete"
+display_name = "STAGE 6 // COMPLETE"
+stage = "STAGE 6"
+description = "WRITE-authorized installation detected and audit reaction recorded."
+bits = 100000.0
+generator_counts = {"worker": 25, "terminal": 5, "server": 1}
+owned_upgrades = PackedStringArray("input_cache", "terminal_pipeline")
+story_flags = {"first_anomaly_started": true, "shift_state_unlocked": true, "operator_discovered": true, "memory_failure_completed": true, "operator_write_detected": true}
+memory_state = &"complete"
+access_mask_state = &"complete"

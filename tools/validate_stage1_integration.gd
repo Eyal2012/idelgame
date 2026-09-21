@@ -66,6 +66,8 @@ func _run_interaction_checks(errors: PackedStringArray, ui: Control, game: Node,
 		generate_button.emit_signal("pressed")
 	if not is_equal_approx(game.get_currency(), 10.0) or bits_label.text != "10\nBITS":
 		errors.append("Ten generate presses did not produce 10 Bits")
+	# Currency presentation is intentionally coalesced at 15 Hz.
+	await get_tree().create_timer(0.08).timeout
 	if buy_button.disabled:
 		errors.append("Buy button did not enable at 10 Bits")
 
@@ -76,7 +78,7 @@ func _run_interaction_checks(errors: PackedStringArray, ui: Control, game: Node,
 		errors.append("Owned label did not refresh after first Worker purchase")
 	if not buy_button.disabled:
 		errors.append("Buy button did not disable after the first Worker purchase")
-	await get_tree().process_frame
+	await get_tree().create_timer(0.08).timeout
 	if ui.get_node_or_null(NodePath(str(PROCESS_ROWS_PATH) + "/terminal")) == null:
 		errors.append("Terminal row did not appear after acquiring Worker")
 
@@ -88,8 +90,12 @@ func _run_interaction_checks(errors: PackedStringArray, ui: Control, game: Node,
 	if not bits_label.text.ends_with("\nBITS"):
 		errors.append("BitsLabel did not remain connected during passive production")
 
-	for _press in range(7):
+	# The second Worker costs 12 Bits. The production check above permits a
+	# small timing tolerance, so eight manual presses guarantees the fixture
+	# reaches that price even at the low end of that tolerance.
+	for _press in range(8):
 		generate_button.emit_signal("pressed")
+	await get_tree().create_timer(0.08).timeout
 	if buy_button.disabled:
 		errors.append("Buy button did not enable for the second Worker after earning enough Bits")
 	else:
@@ -105,6 +111,7 @@ func _run_interaction_checks(errors: PackedStringArray, ui: Control, game: Node,
 		if not terminal_button.disabled:
 			errors.append("Terminal starts affordable unexpectedly")
 		game.debug_add_currency(100.0)
+		await get_tree().create_timer(0.08).timeout
 		if terminal_button.disabled:
 			errors.append("Terminal acquire did not enable after funding")
 		else:

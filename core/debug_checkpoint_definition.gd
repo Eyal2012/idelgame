@@ -14,3 +14,5 @@ extends Resource
 ## inactive, active, or complete.
 @export var memory_state: StringName = &"inactive"
 @export_range(0, 4, 1) var memory_progress: int = 0
+## inactive, restricted, register, write, or complete.
+@export var access_mask_state: StringName = &"inactive"

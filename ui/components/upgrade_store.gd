@@ -187,6 +187,9 @@ func _select(upgrade_id: StringName) -> void:
 	_detail.text = "%s\n%s\n\nCURRENT\n%s\n\nCOST\n%s BITS" % [definition.display_name, definition.description, _current_effect_text(definition, game), NUMBER_FORMATTER.format(definition.cost)]
 	_install.visible = not owned
 	_install.disabled = owned or not game.can_buy_upgrade(upgrade_id)
+	var denial: String = game.get_upgrade_install_denial_reason(upgrade_id)
+	if not denial.is_empty() and not owned:
+		_detail.text += "\n\n%s" % denial
 
 
 func _refresh_affordability() -> void:
