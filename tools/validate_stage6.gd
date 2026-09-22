@@ -86,12 +86,14 @@ func _validate_save_migration(errors: PackedStringArray, access: Node, saves: No
 	access.apply_save_data(saved)
 	if not access.event_started or access.get_operator_access_mask() != access.WRITE or not access.has_operator_permission(access.WRITE):
 		errors.append("P save/load did not preserve Access Mask state")
-	# Q: v4 gains an inactive, safe READ default during migration.
+	# Q: v4 gains an inactive, safe READ default and the later Stage 8 range
+	# state must also remain inactive when migrated through the current schema.
 	var old_save := {"save_version": 4, "saved_at_unix": 0, "game": {}, "story": {"flags": {"memory_failure_completed": true}}, "memory_puzzle": {}}
 	var migrated: Dictionary = saves.migrate_save(old_save)
 	var old_access: Dictionary = migrated.get("access_mask", {})
-	if int(migrated.get("save_version", 0)) != 6 or bool(old_access.get("event_started", true)) or int(old_access.get("operator_access_mask", 0)) != access.READ:
-		errors.append("Q v4 migration did not create inactive READ-default access state")
+	var old_range: Dictionary = migrated.get("integer_range", {})
+	if int(migrated.get("save_version", 0)) != 7 or bool(old_access.get("event_started", true)) or int(old_access.get("operator_access_mask", 0)) != access.READ or bool(old_range.get("stage_started", true)):
+		errors.append("Q v4 migration did not create inactive READ-default access/range state")
 
 
 func _validate_shift_presentation(errors: PackedStringArray, story: Node, access: Node, shift: Node) -> void:

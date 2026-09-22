@@ -92,10 +92,23 @@ func _check_thresholds() -> void:
 		var key := str(threshold)
 		if ratio >= threshold and not threshold_seen.has(key):
 			threshold_seen[key] = true
-			_log("SIGNED RANGE UTILIZATION: %d%%" % roundi(threshold * 100.0))
-			if is_equal_approx(threshold, 0.95):
-				_log("DIRECTIVE: MAXIMIZE OUTPUT\nFURTHER OUTPUT NOT RECOMMENDED")
+			# The hard-stop report is emitted by clamp_currency(), where it can
+			# include the authoritative current and maximum values.
+			if not is_equal_approx(threshold, 1.0):
+				_log(_threshold_message(threshold))
 			_emit_changed()
+
+
+func _threshold_message(threshold: float) -> String:
+	if is_equal_approx(threshold, 0.50):
+		return "SIGNED RANGE UTILIZATION: 50%\nCAPACITY TELEMETRY: WITHIN NOMINAL BAND"
+	if is_equal_approx(threshold, 0.75):
+		return "SIGNED RANGE UTILIZATION: 75%\nAVAILABLE INTEGER CAPACITY: LIMITED"
+	if is_equal_approx(threshold, 0.90):
+		return "SIGNED RANGE UTILIZATION: 90%\nOUTPUT TARGET APPROACHING ADDRESSABLE LIMIT"
+	if is_equal_approx(threshold, 0.95):
+		return "DIRECTIVE: MAXIMIZE OUTPUT\nFURTHER OUTPUT NOT RECOMMENDED\nRANGE RESERVE: 5%"
+	return "SIGNED RANGE UTILIZATION: 99%\nDIRECTIVE CONFLICT DETECTED\nFURTHER OUTPUT CANNOT BE RECOMMENDED"
 
 func _on_upgrade_bought(upgrade_id: StringName) -> void:
 	if stage_started and upgrade_id == &"compute_override_i":

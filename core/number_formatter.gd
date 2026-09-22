@@ -2,11 +2,16 @@ class_name NumberFormatter
 extends RefCounted
 
 ## Shared presentation formatter. Keep the 32-bit chapter target explicit.
+## The final five percent is intentionally shown exactly: the player should be
+## able to see the remaining signed-integer headroom rather than a rounded 2.1B.
+const INT32_EXACT_DISPLAY_THRESHOLD: float = 2040109464.0
+const INT32_MAX_DISPLAY_VALUE: float = 2147483647.0
+
 static func format(value: float, decimal_places: int = 0) -> String:
 	if is_nan(value) or is_inf(value):
 		return "0"
 	var absolute := absf(value)
-	if absolute >= 2_000_000_000.0 and absolute <= 2_147_483_647.0:
+	if absolute >= INT32_EXACT_DISPLAY_THRESHOLD and absolute <= INT32_MAX_DISPLAY_VALUE:
 		return _comma_integer(int(round(value)))
 	if absolute >= 1_000_000_000.0:
 		return _abbreviate(value / 1_000_000_000.0, "B", decimal_places)

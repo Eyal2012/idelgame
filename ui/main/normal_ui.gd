@@ -28,6 +28,7 @@ var economy_refresh_count: int = 0
 var passive_refresh_count: int = 0
 var _capacity_label: Label
 var _limit_rejection_at := -10.0
+var _capacity_visual_band := -1
 
 
 func _ready() -> void:
@@ -226,10 +227,10 @@ func _refresh() -> void:
 	var range := AUTOLOAD_REGISTRY.get_autoload(get_tree(), &"integer_range_manager")
 	if range != null and range.stage_started:
 		_capacity_label.visible = true
-		_capacity_label.text = "OUTPUT HALTED\nINT32 CAPACITY %.2f%%" % range.get_capacity_percent() if range.is_limit_reached() else "INT32 CAPACITY\n%.2f%%" % range.get_capacity_percent()
-		_capacity_label.add_theme_color_override("font_color", Color("f28b9c") if range.is_near_capacity() else Color("7894ad"))
+		_refresh_capacity_display(range)
 	else:
 		_capacity_label.visible = false
+		_capacity_visual_band = -1
 	_set_label_text(per_second_label, "+%s / SEC" % NUMBER_FORMATTER.format(game.get_total_production_per_second(), 2))
 	var manual_power: float = game.get_manual_generation_amount()
 	_set_label_text(manual_power_label, "+%s %s / CLICK" % [NUMBER_FORMATTER.format(manual_power, 2), "BIT" if is_equal_approx(manual_power, 1.0) else "BITS"])
@@ -252,6 +253,7 @@ func _on_generate_pressed() -> void:
 			if Time.get_ticks_msec() / 1000.0 - _limit_rejection_at >= 1.0:
 				_limit_rejection_at = Time.get_ticks_msec() / 1000.0
 				_append_system_log("COMMIT REJECTED\nINTEGER RANGE EXHAUSTED")
+			_play_limit_rejection_feedback()
 			return
 		game.generate_manual()
 		_append_system_log("Manual computation accepted\nBit stream incremented\nAwaiting input...")
@@ -283,6 +285,46 @@ func _play_capacity_feedback() -> void:
 	core_button.modulate = Color(0.74, 0.98, 1.0, 1.0)
 	_core_feedback_tween = create_tween()
 	_core_feedback_tween.tween_property(core_button, "modulate", Color.WHITE, 0.32)
+
+
+func _play_limit_rejection_feedback() -> void:
+	if is_instance_valid(_core_feedback_tween):
+		_core_feedback_tween.kill()
+	core_button.modulate = Color(1.0, 0.72, 0.72, 1.0)
+	_core_feedback_tween = create_tween()
+	_core_feedback_tween.tween_property(core_button, "modulate", Color.WHITE, 0.20)
+
+
+func _refresh_capacity_display(range: Node) -> void:
+	var percentage: float = range.get_capacity_percent()
+	var at_limit: bool = range.is_limit_reached()
+	_capacity_label.text = "INT32 CAPACITY\n%.2f%%\nOUTPUT HALTED" % percentage if at_limit else "INT32 CAPACITY\n%.2f%%" % percentage
+	var band := 0
+	var color := Color("7894ad")
+	var font_size := 11
+	if at_limit:
+		band = 5
+		color = Color("f28b9c")
+		font_size = 14
+	elif percentage >= 99.0:
+		band = 4
+		color = Color("f28b9c")
+		font_size = 13
+	elif percentage >= 95.0:
+		band = 3
+		color = Color("f39b62")
+		font_size = 13
+	elif percentage >= 90.0:
+		band = 2
+		color = Color("f1c66b")
+		font_size = 12
+	elif percentage >= 75.0:
+		band = 1
+		color = Color("72d5ed")
+	if band != _capacity_visual_band:
+		_capacity_visual_band = band
+		_capacity_label.add_theme_color_override("font_color", color)
+		_capacity_label.add_theme_font_size_override("font_size", font_size)
 
 
 func _on_currency_changed(_currency_id: StringName, _old: float, _new: float) -> void:

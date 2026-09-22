@@ -3,7 +3,7 @@
 An expandable 2D idle game with fourth-wall-breaking/meta mechanics
 inspired by the idea of "There Is No Game", but NOT a horror game.
 
-This is **Stage 7: Scheduler Desync**.
+This is **Stage 8: Range Saturation**.
 
 ## Godot version
 
@@ -11,10 +11,17 @@ Godot 4.7 (engine features: `4.7`, `Forward Plus`).
 
 ## Current stage
 
+**Stage 8 - Range Saturation — COMPLETE.** Normal progression now has a stable
+signed-32-bit endpoint at **2,147,483,647 Bits**. The Integer Range Manager
+clamps all output at that limit, presents the capacity and final halted state,
+and persists it in saves. Compute Override I–III appear only during Stage 8.
+SHIFT exposes the diagnostic Integer Register; it does not move the normal UI.
+The next planned event is **INTEGER OVERFLOW**. Actual overflow, interface
+breakdown, and a canonical top-down transition are not implemented.
+
 **Stage 7 - Scheduler Desync.** After Stage 6 completion and a normal-play delay,
 Terminal Node is temporarily starved by a 25% scheduler inefficiency. SHIFT
 exposes an execution queue that the OPERATOR repairs with deterministic controls.
-Stage 8 remains final idle-game buildup only.
 
 **Stage 6 - Access Mask.** Stage 5.2's scaled Memory Blocks remain intact. After
 Stage 5 completion and a normal-play breathing period, a security audit starts
@@ -225,16 +232,19 @@ godot --headless --path . --scene res://tools/ValidateDevPanel.tscn
 ## Roadmap
 
 Stage 5: Memory Accounting Failure. Stage 6: Access Mask. Stage 7: Scheduler
-Desync. Stage 8: final idle-game buildup. `dev/topdown/TopDownPrototype.tscn`
-is development-only and not reachable through canonical progression.
+Desync. **Stage 8: Range Saturation — COMPLETE.**
+
+Canonical ending: **2,147,483,647** → **INTEGER RANGE LIMIT REACHED**.
+Next: **INTEGER OVERFLOW** → **BIT//SHIFT BREAKDOWN** → **INTERNAL WORLD** →
+**TOP-DOWN CHAPTER**. `dev/topdown/TopDownPrototype.tscn` remains
+development-only and is not reachable through canonical progression.
 
 ## Long-term Chapter 1 endpoint (documentation only)
 
-Normal progression ultimately targets `2,147,483,647 Bits`, the signed 32-bit
-integer limit. A later INTEGER OVERFLOW event will break down BIT//SHIFT's
-interface, transition through an animated cutscene, and enter an original
-top-down internal world with exploration, environmental lore, RPG/puzzle
-systems, dodge/combat encounters, and a final large boss. None of that is
-implemented in Stage 5.2.
+Normal progression now settles at `2,147,483,647 Bits`, the signed 32-bit
+integer limit. A later INTEGER OVERFLOW event may break down BIT//SHIFT's
+interface and transition into an original top-down internal world. No actual
+overflow, cutscene, canonical TopDownPrototype entry, Chapter 2, combat, or
+boss content is implemented in Stage 8.
 
 All of it must follow the architecture rules in `docs/ARCHITECTURE.md`.

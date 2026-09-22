@@ -185,7 +185,7 @@ func _select(upgrade_id: StringName) -> void:
 	custom_minimum_size.y = 234
 	_refresh_affordability()
 	var owned: bool = game.is_upgrade_owned(upgrade_id)
-	_detail.text = "%s\n%s\n\nCURRENT\n%s\n\nCOST\n%s BITS" % [definition.display_name, definition.description, _current_effect_text(definition, game), NUMBER_FORMATTER.format(definition.cost)]
+	_detail.text = "%s\n%s\n\n%s\n%s\n\nCOST\n%s BITS" % [definition.display_name, definition.description, _sequence_text(definition), _current_effect_text(definition, game), NUMBER_FORMATTER.format(definition.cost)]
 	_install.visible = not owned
 	_install.disabled = owned or not game.can_buy_upgrade(upgrade_id)
 	var denial: String = game.get_upgrade_install_denial_reason(upgrade_id)
@@ -231,8 +231,16 @@ func _current_effect_text(definition: UpgradeDefinition, game: Node) -> String:
 	if definition.effect_type == &"generator_multiplier":
 		return "×%s %s OUTPUT" % [NUMBER_FORMATTER.format(definition.effect_value, 2), String(definition.target_id).to_upper()]
 	if definition.effect_type == &"global_production_multiplier":
-		return "×%s ALL PROCESS OUTPUT" % NUMBER_FORMATTER.format(definition.effect_value, 2)
+		return "MULTIPLIER: x%s ALL PROCESS OUTPUT" % NUMBER_FORMATTER.format(definition.effect_value, 2)
 	return "×%s" % NUMBER_FORMATTER.format(definition.effect_value, 2)
+
+
+func _sequence_text(definition: UpgradeDefinition) -> String:
+	match definition.id:
+		&"compute_override_i": return "OVERRIDE SEQUENCE 1 / 3  -  NEXT: II"
+		&"compute_override_ii": return "OVERRIDE SEQUENCE 2 / 3  -  NEXT: III"
+		&"compute_override_iii": return "OVERRIDE SEQUENCE 3 / 3  -  FINAL PASS"
+	return "CURRENT EFFECT"
 
 
 func _install_selected() -> void:

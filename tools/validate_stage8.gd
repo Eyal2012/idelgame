@@ -2,6 +2,7 @@ extends Node
 const REG:=preload("res://autoload/autoload_registry.gd")
 const MAIN:=preload("res://ui/main/Main.tscn")
 const CATALOG:=preload("res://ui/debug/debug_checkpoint_catalog.gd")
+const NUMBER_FORMATTER:=preload("res://core/number_formatter.gd")
 func _ready()->void:
 	await get_tree().process_frame;var errors:PackedStringArray=[]
 	var game:=REG.get_autoload(get_tree(),&"game");var story:=REG.get_autoload(get_tree(),&"story_manager");var access:=REG.get_autoload(get_tree(),&"access_mask_manager");var scheduler:=REG.get_autoload(get_tree(),&"scheduler_manager");var range:=REG.get_autoload(get_tree(),&"integer_range_manager");var saves:=REG.get_autoload(get_tree(),&"save_manager")
@@ -14,11 +15,14 @@ func _ready()->void:
 	game.debug_set_bits(game.get_currency());await get_tree().process_frame
 	if capacity==null or not capacity.visible or not capacity.text.contains("INT32 CAPACITY"):errors.append("UI capacity display missing during Stage 8")
 	if range.get_int32_max()!=2147483647.0:errors.append("C INT32 max incorrect")
+	if NUMBER_FORMATTER.format(1520000000.0,2)!="1.52B" or NUMBER_FORMATTER.format(2040332182.0)!="2,040,332,182" or NUMBER_FORMATTER.format(range.get_int32_max())!="2,147,483,647":errors.append("C exact Stage 8 number transition incorrect")
 	game.debug_set_bits(range.get_int32_max()*0.75);range._check_thresholds();if abs(range.get_capacity_percent()-75.0)>0.01 or not range.threshold_seen.has("0.75"):errors.append("D/E capacity or threshold incorrect")
 	var seen_count:int=range.threshold_seen.size();range._check_thresholds();if range.threshold_seen.size()!=seen_count:errors.append("E threshold repeated")
 	game.debug_set_bits(range.get_int32_max()-1.0);game.add_currency(100.0)
 	if game.get_currency()!=range.get_int32_max() or not range.is_limit_reached():errors.append("I/K exact clamp latch failed")
 	var at_limit:float=game.get_currency();game.update_production(10.0);game.generate_manual();if game.get_currency()!=at_limit:errors.append("L/M limit allowed currency growth")
+	var log_history:Array=normal.get("_system_log_history");var rejection_log_count:=log_history.size()
+	var core_button:=normal.get_node("RootMargin/WorkspaceVBox/WorkspaceRow/CorePanel/CoreVBox/CoreFrame/CoreButton") as Button;core_button.emit_signal("pressed");core_button.emit_signal("pressed");core_button.emit_signal("pressed");var feedback:Variant=normal.get("_core_feedback_tween");var log_label:=normal.get("system_log_label") as Label;if game.get_currency()!=at_limit or log_history.size()!=rejection_log_count+1 or log_label==null or not log_label.text.contains("COMMIT REJECTED") or not is_instance_valid(feedback):errors.append("M limit rejection feedback/deduplication failed")
 	if game.get_currency()<0:errors.append("N negative overflow")
 	var state:Dictionary=range.get_save_data();range.reset();range.apply_save_data(state);if not range.is_limit_reached():errors.append("O/P limit save did not persist")
 	var old:Dictionary=saves.migrate_save({"save_version":6,"saved_at_unix":0,"game":{},"story":{},"memory_puzzle":{},"access_mask":{},"scheduler":{}});if int(old.get("save_version",0))!=7 or bool((old.get("integer_range",{}) as Dictionary).get("stage_started",true)):errors.append("Q v6 migration unsafe")
@@ -26,7 +30,7 @@ func _ready()->void:
 	var core:=normal.get_node("RootMargin/WorkspaceVBox/WorkspaceRow/CorePanel") as Control;var processes:=normal.get_node("RootMargin/WorkspaceVBox/WorkspaceRow/ProcessesPanel") as Control;var sidebar:=normal.get_node("RootMargin/WorkspaceVBox/WorkspaceRow/SidebarPanel") as Control;var log_panel:=normal.get_node("RootMargin/WorkspaceVBox/LogPanel") as Control;var module_bay:=normal.get("upgrade_store") as Control;var core_pos:=core.position;var process_pos:=processes.position;var sidebar_pos:=sidebar.position;var log_pos:=log_panel.position;var module_bay_pos:=module_bay.position
 	var shift:=REG.get_autoload(get_tree(),&"shift_manager");shift.set_shift_active_for_test(true);await get_tree().process_frame
 	var register:=main.get_node_or_null("UI/MetaOverlay/IntegerRegister") as Control;if register==null or not register.visible or core.position!=core_pos or processes.position!=process_pos or sidebar.position!=sidebar_pos or log_panel.position!=log_pos or module_bay.position!=module_bay_pos:errors.append("SHIFT integer register/stationary layout failed")
-	var register_text:=register.get_node_or_null("IntegerRegisterPanel/RegisterText") as Label;if register_text==null or not register_text.text.contains("TYPE   SIGNED INT32") or not register_text.text.contains("MIN    -2,147,483,648") or not register_text.text.contains("MAX     2,147,483,647") or not register_text.text.contains("CURRENT 2,147,483,647") or not register_text.text.contains("UTILIZATION 100.00%") or not register_text.text.contains("HEADROOM 0"):errors.append("SHIFT register values missing")
+	var register_text:=register.get_node_or_null("IntegerRegisterPanel/RegisterText") as Label;if register_text==null or not register_text.text.contains("TYPE\nSIGNED INT32") or not register_text.text.contains("MIN  -2,147,483,648") or not register_text.text.contains("MAX  2,147,483,647") or not register_text.text.contains("CURRENT\n2,147,483,647") or not register_text.text.contains("UTILIZATION\n100.00%") or not register_text.text.contains("HEADROOM\n0"):errors.append("SHIFT register values missing")
 	var definitions:Dictionary={};for d in CATALOG.get_definitions():definitions[d.id]=d
 	var panel:=main.get_node_or_null("UI/DebugOverlay/DevPanel") as DevPanel
 	if panel!=null:panel.set_debug_access_for_test(true)
