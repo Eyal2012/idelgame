@@ -12,6 +12,8 @@ extends Resource
 @export var unlock_generator_id: StringName = &""
 @export var unlock_generator_count: int = 0
 @export var prerequisite_upgrade_id: StringName = &""
+## Final-chapter modules stay absent until the signed-integer range is active.
+@export var requires_integer_range_started: bool = false
 
 func validate_definition() -> PackedStringArray:
 	var errors: PackedStringArray = []

@@ -90,6 +90,7 @@ func _ready() -> void:
 		# affordability/selection styling on a currency change.
 		event_bus.currency_changed.connect(func(_a: StringName, _b: float, _c: float) -> void: _refresh_affordability())
 		event_bus.generator_bought.connect(func(_id: StringName, _count: int) -> void: _refresh())
+		event_bus.integer_range_changed.connect(func() -> void: _refresh())
 	_refresh()
 
 

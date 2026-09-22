@@ -80,7 +80,8 @@ func apply_checkpoint(definition: DebugCheckpointDefinition) -> bool:
 	var puzzle := _autoload(&"memory_puzzle")
 	var access := _autoload(&"access_mask_manager")
 	var scheduler := _autoload(&"scheduler_manager")
-	if game == null or story == null or puzzle == null or access == null or scheduler == null:
+	var integer_range := _autoload(&"integer_range_manager")
+	if game == null or story == null or puzzle == null or access == null or scheduler == null or integer_range == null:
 		return false
 	puzzle.debug_reset_current_puzzle()
 	var state := {"bits": definition.bits, "generator_counts": definition.generator_counts, "owned_upgrades": Array(definition.owned_upgrades)}
@@ -97,6 +98,8 @@ func apply_checkpoint(definition: DebugCheckpointDefinition) -> bool:
 		success = access.debug_apply_checkpoint(definition.access_mask_state)
 	if success:
 		success = scheduler.debug_apply_checkpoint(definition.scheduler_state)
+	if success:
+		success = integer_range.debug_apply_checkpoint(definition.integer_range_state)
 	game.debug_refresh_ui()
 	_rebuild_content()
 	return success

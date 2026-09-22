@@ -3,7 +3,7 @@ extends Node
 const AUTOLOAD_REGISTRY := preload("res://autoload/autoload_registry.gd")
 
 ## Versioned, JSON persistence for runtime gameplay state.
-const SAVE_VERSION: int = 6
+const SAVE_VERSION: int = 7
 const SAVE_PATH: String = "user://save.json"
 const BACKUP_PATH: String = "user://save_backup.json"
 const TEMP_PATH: String = "user://save.tmp"
@@ -64,6 +64,7 @@ func build_save_data() -> Dictionary:
 	var memory := AUTOLOAD_REGISTRY.get_autoload(get_tree(), &"memory_puzzle")
 	var access := AUTOLOAD_REGISTRY.get_autoload(get_tree(), &"access_mask_manager")
 	var scheduler := AUTOLOAD_REGISTRY.get_autoload(get_tree(), &"scheduler_manager")
+	var range := AUTOLOAD_REGISTRY.get_autoload(get_tree(), &"integer_range_manager")
 	return {
 		"save_version": SAVE_VERSION,
 		"saved_at_unix": int(Time.get_unix_time_from_system()),
@@ -72,6 +73,7 @@ func build_save_data() -> Dictionary:
 		"memory_puzzle": memory.get_save_data() if memory != null else {},
 		"access_mask": access.get_save_data() if access != null else {},
 		"scheduler": scheduler.get_save_data() if scheduler != null else {},
+		"integer_range": range.get_save_data() if range != null else {},
 	}
 
 
@@ -116,6 +118,8 @@ func load_game() -> bool:
 	if access != null: access.apply_save_data(normalized.get("access_mask", {}))
 	var scheduler := AUTOLOAD_REGISTRY.get_autoload(get_tree(), &"scheduler_manager")
 	if scheduler != null: scheduler.apply_save_data(normalized.get("scheduler", {}))
+	var range := AUTOLOAD_REGISTRY.get_autoload(get_tree(), &"integer_range_manager")
+	if range != null: range.apply_save_data(normalized.get("integer_range", {}))
 	_apply_offline_progress(game, int(normalized.get("saved_at_unix", 0)))
 	_has_loaded_session = true
 	_emit_load_completed(true)
@@ -140,6 +144,8 @@ func migrate_save(data: Dictionary) -> Dictionary:
 				migrated = _migrate_v4_to_v5(migrated)
 			5:
 				migrated = _migrate_v5_to_v6(migrated)
+			6:
+				migrated = _migrate_v6_to_v7(migrated)
 			_:
 				break
 		version = _sanitize_version(migrated.get("save_version", SAVE_VERSION))
@@ -189,6 +195,11 @@ func _migrate_v4_to_v5(data: Dictionary) -> Dictionary:
 	return result
 func _migrate_v5_to_v6(data: Dictionary) -> Dictionary:
 	var result:=data.duplicate(true);result["scheduler"]={"event_started":false,"event_completed":false,"execution_queue":["buffer_read","output_commit","worker_execute","result_verify"],"completion_elapsed":0.0};result["save_version"]=6;return result
+func _migrate_v6_to_v7(data: Dictionary) -> Dictionary:
+	var result := data.duplicate(true)
+	result["integer_range"] = {"stage_started":false,"integer_limit_reached":false,"elapsed":0.0,"threshold_seen":{}}
+	result["save_version"] = 7
+	return result
 
 
 ## Validator injection: never point tests at the player's default files.
@@ -223,6 +234,8 @@ func reset_save(include_backup: bool = true) -> void:
 	if access!=null:access.reset()
 	var scheduler:=AUTOLOAD_REGISTRY.get_autoload(get_tree(),&"scheduler_manager")
 	if scheduler!=null:scheduler.reset()
+	var range:=AUTOLOAD_REGISTRY.get_autoload(get_tree(),&"integer_range_manager")
+	if range!=null:range.reset()
 
 
 func debug_set_autosave_enabled(enabled: bool) -> bool:

@@ -35,7 +35,8 @@ func get_currency() -> float:
 
 func add_currency(amount: float) -> void:
 	var old := bits
-	bits = maxf(0.0, bits + amount)
+	var range := AUTOLOAD_REGISTRY.get_autoload(get_tree(), &"integer_range_manager")
+	bits = maxf(0.0, range.clamp_currency(bits + amount) if range != null else bits + amount)
 	if not is_equal_approx(old, bits):
 		_emit_currency_changed(old, bits)
 
@@ -93,6 +94,10 @@ func is_upgrade_owned(upgrade_id: StringName) -> bool: return owned_upgrades.has
 func is_upgrade_unlocked(upgrade_id: StringName) -> bool:
 	var upgrade := _get_upgrade_definition(upgrade_id)
 	if upgrade == null or is_upgrade_owned(upgrade_id): return false
+	if upgrade.requires_integer_range_started:
+		var integer_range := AUTOLOAD_REGISTRY.get_autoload(get_tree(), &"integer_range_manager")
+		if integer_range == null or not integer_range.stage_started:
+			return false
 	if not upgrade.unlock_generator_id.is_empty() and get_generator_count(upgrade.unlock_generator_id) < upgrade.unlock_generator_count: return false
 	return upgrade.prerequisite_upgrade_id.is_empty() or is_upgrade_owned(upgrade.prerequisite_upgrade_id)
 func can_buy_upgrade(upgrade_id: StringName) -> bool:
@@ -276,6 +281,8 @@ func get_total_production_per_second() -> float:
 
 
 func update_production(delta: float) -> void:
+	var range := AUTOLOAD_REGISTRY.get_autoload(get_tree(), &"integer_range_manager")
+	if range != null and range.is_limit_reached(): return
 	var production := get_total_production_per_second()
 	if production > 0.0:
 		add_currency(production * delta)

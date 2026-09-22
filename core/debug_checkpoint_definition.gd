@@ -18,3 +18,5 @@ extends Resource
 @export var access_mask_state: StringName = &"inactive"
 ## ready, failure, partial, or complete.
 @export var scheduler_state: StringName = &"inactive"
+## inactive, ready, started, range_75, range_95, range_99, or max.
+@export var integer_range_state: StringName = &"inactive"

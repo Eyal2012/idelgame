@@ -1,0 +1,15 @@
+[gd_resource type="Resource" script_class="DebugCheckpointDefinition" load_steps=2 format=3]
+[ext_resource type="Script" path="res://core/debug_checkpoint_definition.gd" id="1"]
+[resource]
+script=ExtResource("1")
+id=&"stage8_started"
+display_name="STAGE 8 // STARTED"
+stage="STAGE 8"
+bits=100000000.0
+generator_counts={"worker":25,"terminal":5,"server":1}
+owned_upgrades=PackedStringArray("input_cache","terminal_pipeline","worker_threading")
+story_flags={"shift_state_unlocked":true,"memory_failure_completed":true,"operator_write_detected":true}
+memory_state=&"complete"
+access_mask_state=&"complete"
+scheduler_state=&"complete"
+integer_range_state=&"started"

@@ -16,11 +16,28 @@ func _ready() -> void:
 	process_mode = Node.PROCESS_MODE_ALWAYS
 	await get_tree().process_frame
 	var errors: PackedStringArray = []
+	_prepare_stage_eight_limit()
 	for size in TEST_SIZES:
 		errors.append_array(await _validate_size(size))
 		errors.append_array(await _validate_main_scene_size(size))
 	print("VALIDATION_RESULT:", "OK" if errors.is_empty() else "ERRORS: " + ", ".join(errors))
 	get_tree().quit()
+
+
+func _prepare_stage_eight_limit() -> void:
+	var registry := preload("res://autoload/autoload_registry.gd")
+	var story = registry.get_autoload(get_tree(), &"story_manager")
+	var access = registry.get_autoload(get_tree(), &"access_mask_manager")
+	var scheduler = registry.get_autoload(get_tree(), &"scheduler_manager")
+	var integer_range = registry.get_autoload(get_tree(), &"integer_range_manager")
+	var game = registry.get_autoload(get_tree(), &"game")
+	integer_range.reset()
+	story.debug_apply_state({"memory_failure_completed": true, "shift_state_unlocked": true, "operator_write_detected": true})
+	access.debug_apply_checkpoint(&"complete")
+	scheduler.debug_apply_checkpoint(&"complete")
+	integer_range.start_stage()
+	game.debug_set_bits(integer_range.get_int32_max())
+	game.add_currency(1.0)
 
 
 func _validate_size(viewport_size: Vector2) -> PackedStringArray:
@@ -81,10 +98,30 @@ func _validate_main_scene_size(viewport_size: Vector2) -> PackedStringArray:
 		if normal_ui.size != viewport_size:
 			errors.append("%s: Main/UI/NormalUI size is %s" % [viewport_size, normal_ui.size])
 		var content := normal_ui.get_node_or_null(CONTENT_PATH) as Control
+		var capacity := normal_ui.find_child("Int32CapacityLabel", true, false) as Label
+		var bits := normal_ui.get_node_or_null("RootMargin/WorkspaceVBox/WorkspaceRow/CorePanel/CoreVBox/CoreFrame/CoreButton/CoreReadout/BitsLabel") as Label
 		if content == null:
 			errors.append("%s: Main/UI/NormalUI content is missing" % viewport_size)
 		else:
 			_check_bounds(errors, viewport_size, "Main/UI content", content.get_global_rect())
+		if capacity == null or not capacity.visible or not capacity.text.contains("OUTPUT HALTED"):
+			errors.append("%s: Stage 8 capacity display is missing" % viewport_size)
+		elif bits == null or not bits.text.contains("2,147,483,647"):
+			errors.append("%s: exact Stage 8 Bits display is missing" % viewport_size)
+		else:
+			_check_bounds(errors, viewport_size, "Stage 8 capacity", capacity.get_global_rect())
+		var overlay := main.get_node_or_null("UI/MetaOverlay") as Control
+		if overlay != null and overlay.has_method("set_shift_active"):
+			overlay.set_shift_active(true)
+		await get_tree().process_frame
+		var register := main.get_node_or_null("UI/MetaOverlay/IntegerRegister") as Control
+		var register_text := register.get_node_or_null("IntegerRegisterPanel/RegisterText") as Label if register != null else null
+		if register == null or not register.visible or register_text == null or not register_text.text.contains("2,147,483,647"):
+			errors.append("%s: Stage 8 integer register is missing" % viewport_size)
+		else:
+			_check_bounds(errors, viewport_size, "Stage 8 integer register", (register.get_node("IntegerRegisterPanel") as Control).get_global_rect())
+		if overlay != null and overlay.has_method("set_shift_active"):
+			overlay.set_shift_active(false)
 
 	main.queue_free()
 	await get_tree().process_frame

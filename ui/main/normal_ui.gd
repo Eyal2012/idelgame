@@ -26,6 +26,8 @@ var _passive_display_dirty := false
 var _system_log_history: Array[String] = []
 var economy_refresh_count: int = 0
 var passive_refresh_count: int = 0
+var _capacity_label: Label
+var _limit_rejection_at := -10.0
 
 
 func _ready() -> void:
@@ -38,6 +40,13 @@ func _ready() -> void:
 	process_rows = get_node("RootMargin/WorkspaceVBox/WorkspaceRow/ProcessesPanel/ProcessesVBox/ProcessScroll/ProcessRows")
 	shift_indicator = get_node("RootMargin/WorkspaceVBox/HeaderPanel/HeaderRow/ShiftIndicator")
 	core_button.pressed.connect(_on_generate_pressed)
+	_capacity_label = Label.new()
+	_capacity_label.name = "Int32CapacityLabel"
+	_capacity_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	_capacity_label.add_theme_font_size_override("font_size", 11)
+	_capacity_label.add_theme_color_override("font_color", Color("7894ad"))
+	_capacity_label.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	(core_button.get_node("CoreReadout") as Container).add_child(_capacity_label)
 	var upgrades_button := get_node("RootMargin/WorkspaceVBox/WorkspaceRow/SidebarPanel/SidebarVBox/UpgradesNavLabel") as Button
 	upgrades_button.pressed.connect(_toggle_upgrades)
 	upgrade_store = UPGRADE_STORE.new()
@@ -87,6 +96,8 @@ func _connect_signals() -> void:
 		event_bus.shift_state_changed.connect(_on_shift_state_changed)
 	if not event_bus.is_connected("story_flag_changed", _on_story_flag_changed):
 		event_bus.story_flag_changed.connect(_on_story_flag_changed)
+	if not event_bus.is_connected("integer_range_changed", _on_integer_range_changed):
+		event_bus.integer_range_changed.connect(_on_integer_range_changed)
 
 
 func _configure_shift_layer() -> void:
@@ -212,6 +223,13 @@ func _refresh() -> void:
 		return
 	economy_refresh_count += 1
 	_set_label_text(bits_label, "%s\nBITS" % NUMBER_FORMATTER.format(game.get_currency()))
+	var range := AUTOLOAD_REGISTRY.get_autoload(get_tree(), &"integer_range_manager")
+	if range != null and range.stage_started:
+		_capacity_label.visible = true
+		_capacity_label.text = "OUTPUT HALTED\nINT32 CAPACITY %.2f%%" % range.get_capacity_percent() if range.is_limit_reached() else "INT32 CAPACITY\n%.2f%%" % range.get_capacity_percent()
+		_capacity_label.add_theme_color_override("font_color", Color("f28b9c") if range.is_near_capacity() else Color("7894ad"))
+	else:
+		_capacity_label.visible = false
 	_set_label_text(per_second_label, "+%s / SEC" % NUMBER_FORMATTER.format(game.get_total_production_per_second(), 2))
 	var manual_power: float = game.get_manual_generation_amount()
 	_set_label_text(manual_power_label, "+%s %s / CLICK" % [NUMBER_FORMATTER.format(manual_power, 2), "BIT" if is_equal_approx(manual_power, 1.0) else "BITS"])
@@ -229,6 +247,12 @@ func _refresh() -> void:
 func _on_generate_pressed() -> void:
 	var game := AUTOLOAD_REGISTRY.get_autoload(get_tree(), &"game")
 	if game != null:
+		var range := AUTOLOAD_REGISTRY.get_autoload(get_tree(), &"integer_range_manager")
+		if range != null and range.is_limit_reached():
+			if Time.get_ticks_msec() / 1000.0 - _limit_rejection_at >= 1.0:
+				_limit_rejection_at = Time.get_ticks_msec() / 1000.0
+				_append_system_log("COMMIT REJECTED\nINTEGER RANGE EXHAUSTED")
+			return
 		game.generate_manual()
 		_append_system_log("Manual computation accepted\nBit stream incremented\nAwaiting input...")
 		_refresh()
@@ -310,6 +334,10 @@ func _on_shift_state_changed(_active: bool) -> void:
 
 func _on_story_flag_changed(_flag_id: StringName, _old_value: Variant, _new_value: Variant) -> void:
 	_refresh_shift_indicator()
+
+
+func _on_integer_range_changed() -> void:
+	_refresh()
 
 
 func _refresh_shift_indicator() -> void:
